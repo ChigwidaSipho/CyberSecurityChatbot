@@ -20,7 +20,7 @@ namespace CyberSecurityChatbot
             string name = Console.ReadLine();
 
             User user = new User(name);
-            bot.SpeakGreeting(user.Name);
+            Chatbot.PlayGreetingSound("ChatBotGreeting.wav");
 
             Console.WriteLine($"Hello, {user.Name}! Ask me anything about cybersecurity.");
 
