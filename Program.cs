@@ -20,6 +20,7 @@ namespace CyberSecurityChatbot
             string name = Console.ReadLine();
 
             User user = new User(name);
+            bot.SpeakGreeting(user.Name);
 
             Console.WriteLine($"Hello, {user.Name}! Ask me anything about cybersecurity.");
 
@@ -36,6 +37,8 @@ namespace CyberSecurityChatbot
 
                 string response = bot.GetResponse(input);
                 Console.WriteLine(response);
+
+
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Speech.Synthesis;
 
 namespace CyberSecurityChatbot
 {
@@ -36,6 +37,17 @@ namespace CyberSecurityChatbot
             {
                 return "I’m not sure about that, but stay safe online!";
             }
+
+        }
+        // A method to speak a greeting using text-to-speech
+        public void SpeakGreeting(string userName)
+        {
+            SpeechSynthesizer synth = new SpeechSynthesizer();
+
+            synth.Volume = 100; // 0 - 100
+            synth.Rate = 0;     // speed (-10 to 10)
+
+            synth.Speak($"Hello {userName}, welcome to the Cybersecurity Awareness Bot.");
         }
     }
 }
