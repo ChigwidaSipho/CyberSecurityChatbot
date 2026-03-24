@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace CyberSecurityChatbot
 {
@@ -10,6 +12,17 @@ namespace CyberSecurityChatbot
     {
         static void Main(string[] args)
         {
+            //ASCI art for the chatbot name
+            Console.WriteLine(@"
+.------..------..------..------..------..------..------.
+|C.--. ||H.--. ||A.--. ||T.--. ||B.--. ||O.--. ||T.--. |
+| :/\: || :/\: || (\/) || :/\: || :(): || :/\: || :/\: |
+| :\/: || (__) || :\/: || (__) || ()() || :\/: || (__) |
+| '--'C|| '--'H|| '--'A|| '--'T|| '--'B|| '--'O|| '--'T|
+`------'`------'`------'`------'`------'`------'`------'
+");
+
+
             //A simple console application to demonstrate a cybersecurity chatbot
 
             Chatbot bot = new Chatbot();
