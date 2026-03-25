@@ -22,6 +22,7 @@ namespace CyberSecurityChatbot
 `------'`------'`------'`------'`------'`------'`------'
 ");
 
+            Chatbot.PlayGreetingSound("ChatBotGreeting.wav");
 
             //A simple console application to demonstrate a cybersecurity chatbot
 
@@ -33,7 +34,6 @@ namespace CyberSecurityChatbot
             string name = Console.ReadLine();
 
             User user = new User(name);
-            Chatbot.PlayGreetingSound("ChatBotGreeting.wav");
 
             Console.WriteLine($"Hello, {user.Name}! Ask me anything about cybersecurity.");
 
@@ -49,7 +49,7 @@ namespace CyberSecurityChatbot
                 }
 
                 string response = bot.GetResponse(input);
-                Console.WriteLine(response);
+                bot.TypeEffect(response);
 
 
             }
