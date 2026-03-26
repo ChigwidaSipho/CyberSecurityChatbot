@@ -86,7 +86,7 @@ namespace CyberSecurityChatbot
                 {
         "You're welcome! Stay safe online!",
         "No worries! Always here to help.",
-        "Glad I could help! Keep your passwords strong 😎."
+        "Glad I could help! Keep your passwords strong."
     };
                 return GetRandom(responses);
             }
