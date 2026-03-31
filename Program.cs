@@ -7,6 +7,9 @@ namespace CyberSecurityChatbot
     {
         static void Main(string[] args)
         {
+            // ===== SOUND =====
+            Chatbot.PlayGreetingSound("ChatBotGreeting.wav");
+
             // ===== ASCII HEADER (CLEAN + SAFE COLORS) =====
             string[] ascii = {
                 "  $$$$$$\\  $$\\                  $$\\     $$\\                  $$\\     ",
@@ -40,9 +43,6 @@ namespace CyberSecurityChatbot
             }
 
             Console.ResetColor();
-
-            // ===== SOUND =====
-            Chatbot.PlayGreetingSound("ChatBotGreeting.wav");
 
             // ===== BOT INIT =====
             Chatbot bot = new Chatbot();
