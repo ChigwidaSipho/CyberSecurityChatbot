@@ -12,6 +12,7 @@ namespace CyberSecurityChatbot
         private string userInterest = "";
         private string lastTopic = "";
         private Random rand = new Random();
+        private Sentiment sentiment = new Sentiment();
 
         // ===== DELEGATE USAGE =====
         private ResponseHandler responseHandler;
@@ -19,6 +20,10 @@ namespace CyberSecurityChatbot
         public Chatbot()
         {
             responseHandler = ProcessResponse;
+
+            // ===== SUBSCRIBE TO SENTIMENT EVENT =====
+            sentiment.OnSentimentDetected += (s, input) =>
+                Console.WriteLine($"[Sentiment detected: {s}]");
         }
 
         public string GetResponse(string input)
@@ -47,28 +52,34 @@ namespace CyberSecurityChatbot
                 return $"Hey{name}! 👋 What cybersecurity topic can I help you with today?\n\n• Passwords\n• Phishing\n• Safe Browsing\n• Privacy";
             }
 
-            // ================= SENTIMENT =================
-            if (lower.Contains("worried") || lower.Contains("scared") || lower.Contains("anxious"))
+            // ================= SENTIMENT (via Sentiment class) =================
+            string sentimentResponse = sentiment.GetSentiment(lower);
+            if (!string.IsNullOrEmpty(sentimentResponse))
             {
-                string tip = GetTopicResponse("phishing and scams");
-                return $"I understand — cybersecurity can feel overwhelming. I'll guide you step by step so you stay safe. 💙\n\nHere's something useful:\n\n{tip}";
-            }
+                // Append a topic tip if the user is worried or scared
+                if (lower.Contains("worried") || lower.Contains("scared") || lower.Contains("anxious"))
+                {
+                    string tip = GetTopicResponse("phishing").Message;
+                    return $"{sentimentResponse} 💙\n\nHere's something useful:\n\n{tip}";
+                }
 
-            if (lower.Contains("frustrated") || lower.Contains("angry") || lower.Contains("annoyed"))
-            {
-                return "I hear you — it can be a lot to take in. Let's slow down.\n\nWhat topic would you like help with?\n• Passwords  • Phishing  • Privacy  • Scams";
-            }
+                // If confused, try to re-explain the last topic
+                if (lower.Contains("confused") || lower.Contains("don't understand") || lower.Contains("dont understand"))
+                {
+                    if (!string.IsNullOrEmpty(lastTopic))
+                        return $"{sentimentResponse}\n\n{GetDetailedInfo(lastTopic).Tips}";
+                    return $"{sentimentResponse}\n\nWhat topic is confusing you?\n• Passwords  • Phishing  • Privacy  • Scams";
+                }
 
-            if (lower.Contains("confused") || lower.Contains("don't understand") || lower.Contains("dont understand"))
-            {
-                if (!string.IsNullOrEmpty(lastTopic))
-                    return $"No stress — let me break down {lastTopic} more simply.\n\n{GetDetailedInfo(lastTopic)}";
-                return "No stress — I'll break it down simply. What topic is confusing you?\n• Passwords  • Phishing  • Privacy  • Scams";
-            }
+                // If frustrated or angry, prompt topic selection
+                if (lower.Contains("frustrated") || lower.Contains("angry") || lower.Contains("annoyed"))
+                    return $"{sentimentResponse}\n\nWhat topic would you like help with?\n• Passwords  • Phishing  • Privacy  • Scams";
 
-            if (lower.Contains("curious") || lower.Contains("interesting"))
-            {
-                return "Great mindset! Curiosity is the first step to staying cyber-safe. 🔍\n\nWhat would you like to explore?\n• Passwords  • Phishing  • Privacy  • Scams  • Malware  • VPN  • 2FA";
+                // For curious — suggest topics
+                if (lower.Contains("curious") || lower.Contains("interesting"))
+                    return $"{sentimentResponse}\n\nWhat would you like to explore?\n• Passwords  • Phishing  • Privacy  • Scams  • Malware  • VPN  • 2FA";
+
+                return sentimentResponse;
             }
 
             // ================= INTEREST MEMORY =================
@@ -79,7 +90,7 @@ namespace CyberSecurityChatbot
                     if (lower.Contains(key))
                     {
                         userInterest = key;
-                        return $"Got it! I'll remember that you're interested in {key}. It's a crucial part of staying safe online.\n\n{GetTopicResponse(key)}";
+                        return $"Got it! I'll remember that you're interested in {key}. It's a crucial part of staying safe online.\n\n{GetTopicResponse(key).Message}";
                     }
                 }
             }
@@ -88,7 +99,7 @@ namespace CyberSecurityChatbot
             if (lower.Contains("tell me more") || lower.Contains("explain more") || lower.Contains("more info") || lower.Contains("another tip") || lower.Contains("give me more"))
             {
                 if (!string.IsNullOrEmpty(lastTopic))
-                    return GetDetailedInfo(lastTopic);
+                    return GetDetailedInfo(lastTopic).Tips;
                 return "Sure! What topic would you like more on?\n• Passwords  • Phishing  • Safe Browsing  • Privacy";
             }
 
@@ -105,8 +116,8 @@ namespace CyberSecurityChatbot
                 {
                     lastTopic = key;
                     if (!string.IsNullOrEmpty(userInterest) && userInterest == key)
-                        return $"As someone interested in {key}, here's a tip:\n\n{GetTopicResponse(key)}";
-                    return GetTopicResponse(key);
+                        return $"As someone interested in {key}, here's a tip:\n\n{GetTopicResponse(key).Message}";
+                    return GetTopicResponse(key).Message;
                 }
             }
 
@@ -212,7 +223,7 @@ namespace CyberSecurityChatbot
         };
 
         // ================= HELPERS =================
-        private string GetTopicResponse(string topic)
+        private ChatbotModel GetTopicResponse(string topic)
         {
             foreach (var key in topicResponses.Keys)
             {
@@ -220,30 +231,30 @@ namespace CyberSecurityChatbot
                 {
                     lastTopic = topic;
                     var list = topicResponses[key];
-                    return list[rand.Next(list.Count)];
+                    return new ChatbotModel { Topic = key, Message = list[rand.Next(list.Count)] };
                 }
             }
-            return "I didn't catch that topic. Try asking about passwords, phishing, or privacy.";
+            return new ChatbotModel { Message = "I didn't catch that topic. Try asking about passwords, phishing, or privacy." };
         }
 
-        private string GetDetailedInfo(string topic)
+        private ChatbotModel GetDetailedInfo(string topic)
         {
             switch (topic)
             {
                 case "password":
-                    return "🔑 More on passwords:\n\n• Minimum 12 characters\n• Mix letters, numbers, symbols\n• Use a password manager\n• Enable 2FA everywhere\n• Change passwords after any breach";
+                    return new ChatbotModel { Topic = topic, Tips = "🔑 More on passwords:\n\n• Minimum 12 characters\n• Mix letters, numbers, symbols\n• Use a password manager\n• Enable 2FA everywhere\n• Change passwords after any breach" };
                 case "phishing":
-                    return "🎣 More on phishing:\n\n• Check sender email addresses carefully\n• Don't click links — go directly to the website\n• Report phishing emails to your IT/provider\n• Use email filters and spam detection";
+                    return new ChatbotModel { Topic = topic, Tips = "🎣 More on phishing:\n\n• Check sender email addresses carefully\n• Don't click links — go directly to the website\n• Report phishing emails to your IT/provider\n• Use email filters and spam detection" };
                 case "scam":
-                    return "🚨 More on scams:\n\n• Never send money to unverified contacts\n• Verify identities through official channels\n• Be suspicious of unsolicited contact\n• Report scams to local authorities";
+                    return new ChatbotModel { Topic = topic, Tips = "🚨 More on scams:\n\n• Never send money to unverified contacts\n• Verify identities through official channels\n• Be suspicious of unsolicited contact\n• Report scams to local authorities" };
                 case "privacy":
-                    return "🔒 More on privacy:\n\n• Audit app permissions monthly\n• Use encrypted messaging (Signal)\n• Opt out of data tracking where possible\n• Use a VPN on public networks";
+                    return new ChatbotModel { Topic = topic, Tips = "🔒 More on privacy:\n\n• Audit app permissions monthly\n• Use encrypted messaging (Signal)\n• Opt out of data tracking where possible\n• Use a VPN on public networks" };
                 case "malware":
-                    return "🦠 More on malware:\n\n• Keep OS and software updated\n• Use reputable antivirus software\n• Never open attachments from unknown senders\n• Back up data regularly";
+                    return new ChatbotModel { Topic = topic, Tips = "🦠 More on malware:\n\n• Keep OS and software updated\n• Use reputable antivirus software\n• Never open attachments from unknown senders\n• Back up data regularly" };
                 case "safe browsing":
-                    return "🌐 More on safe browsing:\n\n• Use a privacy-focused browser (Firefox, Brave)\n• Install uBlock Origin to block malicious ads\n• Clear cookies and cache regularly\n• Avoid public Wi-Fi without a VPN";
+                    return new ChatbotModel { Topic = topic, Tips = "🌐 More on safe browsing:\n\n• Use a privacy-focused browser (Firefox, Brave)\n• Install uBlock Origin to block malicious ads\n• Clear cookies and cache regularly\n• Avoid public Wi-Fi without a VPN" };
                 default:
-                    return $"Let's go deeper into {topic}. Always double-check sources and stay alert online. Ask me something specific!";
+                    return new ChatbotModel { Topic = topic, Tips = $"Let's go deeper into {topic}. Always double-check sources and stay alert online. Ask me something specific!" };
             }
         }
     }
