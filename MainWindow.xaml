@@ -10,4 +10,4 @@
     <Grid>
         <local:ChatbotGUI/>
     </Grid>
-</Window>
+</Window> 
