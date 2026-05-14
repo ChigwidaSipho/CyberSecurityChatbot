@@ -1,170 +1,249 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Media;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CyberSecurityChatbot
 {
+    // ===== DELEGATE =====
+    public delegate string ResponseHandler(string input);
+
     internal class Chatbot
     {
-        public void GreetUser()
-        {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-
-            Console.WriteLine("\n╔════════════════════════════════════════════╗");
-            Console.WriteLine("║      CYBERSECURITY AWARENESS SYSTEM        ║");
-            Console.WriteLine("╚════════════════════════════════════════════╝");
-
-            Console.ResetColor();
-        }
-
+        private string userName = "";
+        private string userInterest = "";
+        private string lastTopic = "";
         private Random rand = new Random();
+
+        // ===== DELEGATE USAGE =====
+        private ResponseHandler responseHandler;
+
+        public Chatbot()
+        {
+            responseHandler = ProcessResponse;
+        }
 
         public string GetResponse(string input)
         {
-            input = input.ToLower();
-
-            // GREETING
-            if (input.Contains("how are you"))
-            {
-                string[] responses =
-                {
-            "I'm running smoothly! Ready to help you stay safe online and dodge cyber threats.",
-            "All systems operational. I can give tips on passwords, phishing, safe browsing, and more.",
-            "Feeling cyber-secure! Ask me anything about keeping your accounts and info protected."
-        };
-                return GetRandom(responses);
-            }
-
-            // PURPOSE
-            else if (input.Contains("purpose") || input.Contains("what do you do"))
-            {
-                return "I’m your personal cybersecurity guide. I explain online threats, give safety tips, and help you make smarter choices online—like avoiding scams, phishing, and weak passwords.";
-            }
-
-            // HELP MENU
-            else if (input.Contains("help") || input.Contains("what can i ask"))
-            {
-                return "You can ask me things like:\n- How to create strong passwords\n- How to spot phishing emails or scam messages\n- How to browse safely online\n- How to protect your personal info on websites\n- Any general questions about staying secure online";
-            }
-
-            // STRONG PASSWORD
-            else if (input.Contains("create strong password") || input.Contains("strong password") || input.Contains("password"))
-            {
-                string[] responses =
-                {
-            "To create strong passwords, use uppercase, lowercase, numbers, and symbols. Example: 'Cyber@2026Secure!'. Avoid repeating passwords across sites.",
-            "Never reuse passwords across multiple accounts—hackers love that. Make each password unique.",
-            "Consider a passphrase: easy to remember but hard to guess, like 'Blue$Coffee*Moon2026'."
-        };
-                return GetRandom(responses);
-            }
-
-            // PHISHING / SCAM
-            else if (input.Contains("spot phishing") || input.Contains("phishing") || input.Contains("scam") || input.Contains("scam message") || input.Contains("phishing email"))
-            {
-                string[] responses =
-                {
-            "Phishing emails or scam messages often look urgent or too good to be true. Don't click unknown links, verify senders, and double-check URLs before entering info.",
-            "Never give personal info in response to suspicious emails or messages.",
-            "If it pressures you or promises something amazing, it’s probably a scam."
-        };
-                return GetRandom(responses);
-            }
-
-            // SAFE BROWSING
-            else if (input.Contains("browse safely") || input.Contains("safe browsing") || input.Contains("website") || input.Contains("website safety"))
-            {
-                string[] responses =
-                {
-            "To browse safely, always check for HTTPS and the padlock icon before entering sensitive info.",
-            "Avoid downloading files or software from untrusted websites.",
-            "Keep your browser updated, enable pop-up blockers, and consider using a password manager."
-        };
-                return GetRandom(responses);
-            }
-
-            // PERSONAL INFO PROTECTION
-            else if (input.Contains("protect personal info") || input.Contains("personal information") || input.Contains("privacy"))
-            {
-                string[] responses =
-                {
-            "Protect your personal info by sharing minimally online, using two-factor authentication, strong passwords, and reviewing privacy settings on apps and websites.",
-            "Think before you share: only give personal info to trusted sites and contacts.",
-            "Regularly check your accounts for suspicious activity and adjust privacy settings."
-        };
-                return GetRandom(responses);
-            }
-
-            // GENERAL CYBERSECURITY / STAY SECURE
-            else if (input.Contains("stay secure online") || input.Contains("general cybersecurity") || input.Contains("security tips"))
-            {
-                string[] responses =
-                {
-            "Stay secure online by keeping software updated, using strong passwords, spotting phishing attempts, avoiding suspicious links, and reviewing privacy settings.",
-            "Think like a hacker: if it looks off, check it twice before clicking or sharing info.",
-            "Use multi-factor authentication wherever possible for extra account protection."
-        };
-                return GetRandom(responses);
-            }
-
-            // THANK YOU
-            else if (input.Contains("thank you") || input.Contains("thanks"))
-            {
-                string[] responses =
-                {
-            "You're welcome! Stay alert and safe online.",
-            "No worries! Remember, strong passwords and cautious clicking are your best friends.",
-            "Glad I could help! Keep learning and stay protected from cyber threats."
-        };
-                return GetRandom(responses);
-            }
-
-            else
-            {
-                string[] responses =
-                {
-            "Hmm… I don’t fully understand that yet. Try asking about:\n- Creating strong passwords\n- Spotting phishing or scam messages\n- Browsing safely online\n- Protecting your personal info\n- General cybersecurity tips",
-            "I’m still learning, but I can give advice on passwords, phishing, safe browsing, or protecting personal info if you ask.",
-            "Not sure about that one. Ask me something like 'How do I make a strong password?' or 'How do I spot phishing emails?'"
-        };
-                return GetRandom(responses);
-            }
-        }
-        private static Random rnd = new Random();
-        private string GetRandom(string[] responses)
-        {
-            return responses[rnd.Next(responses.Length)];
-        }
-        public void TypeEffect(string message)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-
-            foreach (char c in message)
-            {
-                Console.Write(c);
-                Thread.Sleep(20);
-            }
-
-            Console.WriteLine();
-            Console.ResetColor();
+            return responseHandler(input);
         }
 
-        public static void PlayGreetingSound(string filepath)
+        private string ProcessResponse(string input)
         {
-            try
+            if (string.IsNullOrWhiteSpace(input))
+                return "Please type a message!";
+
+            string lower = input.ToLower().Trim();
+
+            // ================= NAME =================
+            if (lower.Contains("my name is"))
             {
-                SoundPlayer greetingPlayer = new SoundPlayer(filepath);
-                greetingPlayer.PlaySync();
+                userName = input.ToLower().Replace("my name is", "").Trim();
+                return $"Nice to meet you, {userName}! Ask me anything about cybersecurity.";
             }
-            catch (Exception ex)
+
+            // ================= GREETINGS =================
+            if (lower.Contains("hello") || lower.Contains("hi") || lower.Contains("hey") || lower.Contains("howzit"))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Error playing sound: " + ex.Message);
-                Console.ResetColor();
+                string name = string.IsNullOrEmpty(userName) ? "" : $", {userName}";
+                return $"Hey{name}! 👋 What cybersecurity topic can I help you with today?\n\n• Passwords\n• Phishing\n• Safe Browsing\n• Privacy";
+            }
+
+            // ================= SENTIMENT =================
+            if (lower.Contains("worried") || lower.Contains("scared") || lower.Contains("anxious"))
+            {
+                string tip = GetTopicResponse("phishing and scams");
+                return $"I understand — cybersecurity can feel overwhelming. I'll guide you step by step so you stay safe. 💙\n\nHere's something useful:\n\n{tip}";
+            }
+
+            if (lower.Contains("frustrated") || lower.Contains("angry") || lower.Contains("annoyed"))
+            {
+                return "I hear you — it can be a lot to take in. Let's slow down.\n\nWhat topic would you like help with?\n• Passwords  • Phishing  • Privacy  • Scams";
+            }
+
+            if (lower.Contains("confused") || lower.Contains("don't understand") || lower.Contains("dont understand"))
+            {
+                if (!string.IsNullOrEmpty(lastTopic))
+                    return $"No stress — let me break down {lastTopic} more simply.\n\n{GetDetailedInfo(lastTopic)}";
+                return "No stress — I'll break it down simply. What topic is confusing you?\n• Passwords  • Phishing  • Privacy  • Scams";
+            }
+
+            if (lower.Contains("curious") || lower.Contains("interesting"))
+            {
+                return "Great mindset! Curiosity is the first step to staying cyber-safe. 🔍\n\nWhat would you like to explore?\n• Passwords  • Phishing  • Privacy  • Scams  • Malware  • VPN  • 2FA";
+            }
+
+            // ================= INTEREST MEMORY =================
+            if (lower.Contains("interested in") || lower.Contains("i like") || lower.Contains("i care about"))
+            {
+                foreach (var key in topicResponses.Keys)
+                {
+                    if (lower.Contains(key))
+                    {
+                        userInterest = key;
+                        return $"Got it! I'll remember that you're interested in {key}. It's a crucial part of staying safe online.\n\n{GetTopicResponse(key)}";
+                    }
+                }
+            }
+
+            // ================= FOLLOW UP =================
+            if (lower.Contains("tell me more") || lower.Contains("explain more") || lower.Contains("more info") || lower.Contains("another tip") || lower.Contains("give me more"))
+            {
+                if (!string.IsNullOrEmpty(lastTopic))
+                    return GetDetailedInfo(lastTopic);
+                return "Sure! What topic would you like more on?\n• Passwords  • Phishing  • Safe Browsing  • Privacy";
+            }
+
+            // ================= HELP =================
+            if (lower.Contains("help") || lower.Contains("what can you"))
+            {
+                return "I can help you with:\n\n🔑 Password safety\n🎣 Phishing & scams\n🌐 Safe browsing\n🔒 Privacy protection\n🦠 Malware\n🌍 VPN\n🔐 2FA\n\nJust ask about any of these!";
+            }
+
+            // ================= KEYWORD MATCHING =================
+            foreach (var key in topicResponses.Keys)
+            {
+                if (lower.Contains(key))
+                {
+                    lastTopic = key;
+                    if (!string.IsNullOrEmpty(userInterest) && userInterest == key)
+                        return $"As someone interested in {key}, here's a tip:\n\n{GetTopicResponse(key)}";
+                    return GetTopicResponse(key);
+                }
+            }
+
+            // ================= SAFE BROWSING =================
+            if (lower.Contains("brows") || lower.Contains("website") || lower.Contains("internet") || lower.Contains("online safety") || lower.Contains("safe browsing"))
+            {
+                lastTopic = "safe browsing";
+                string[] responses =
+                {
+                    "🌐 Always check for HTTPS and the padlock icon in the address bar before entering any personal info.",
+                    "🌐 Avoid downloading software from unknown websites — stick to official sources or verified app stores.",
+                    "🌐 Keep your browser and extensions updated. Outdated browsers have security vulnerabilities attackers can exploit."
+                };
+                return responses[rand.Next(responses.Length)];
+            }
+
+            // ================= THANK YOU =================
+            if (lower.Contains("thank") || lower.Contains("thanks") || lower.Contains("appreciate"))
+            {
+                string[] responses =
+                {
+                    "You're welcome! Stay safe out there. 🛡",
+                    "Happy to help! Remember — cybersecurity is everyone's responsibility.",
+                    "Anytime! Keep your accounts locked down tight. 🔒"
+                };
+                return responses[rand.Next(responses.Length)];
+            }
+
+            // ================= GOODBYE =================
+            if (lower.Contains("bye") || lower.Contains("goodbye") || lower.Contains("exit") || lower.Contains("quit"))
+            {
+                string name = string.IsNullOrEmpty(userName) ? "" : $", {userName}";
+                return $"Stay safe online{name}! 👋 Come back anytime you have cybersecurity questions.";
+            }
+
+            // ================= DEFAULT =================
+            string[] fallback =
+            {
+                "I didn't quite catch that. Try asking about:\n• Passwords\n• Phishing\n• Safe browsing\n• Privacy",
+                "I specialise in cybersecurity topics. Ask me about passwords, scams, or online safety!",
+                "Not sure about that one. Rephrase it or pick a topic: passwords, phishing, privacy, or safe browsing."
+            };
+            return fallback[rand.Next(fallback.Length)];
+        }
+
+        // ================= TOPIC DICTIONARY =================
+        private Dictionary<string, List<string>> topicResponses = new Dictionary<string, List<string>>
+        {
+            {
+                "password", new List<string>
+                {
+                    "🔑 Strong passwords use uppercase, lowercase, numbers, and symbols.\nExample: Cyber@2026!\n\nNever reuse passwords across different accounts.",
+                    "🔑 Try using a passphrase — a string of random words like: Blue$Coffee*Moon2026\n\nIt's long, memorable, and hard to crack.",
+                    "🔑 Use a password manager like Bitwarden or 1Password to generate and store strong passwords securely.\n\nNever write passwords on sticky notes!"
+                }
+            },
+            {
+                "phishing", new List<string>
+                {
+                    "🎣 Phishing is when attackers pretend to be trusted companies to steal your info.\n\nAlways check the sender's email address carefully before clicking anything.",
+                    "🎣 Watch out for urgent language like 'Your account will be closed!' — scammers use panic to trick you.\n\nLegitimate companies won't ask for passwords via email.",
+                    "🎣 Hover over links before clicking to see the real URL.\n\nIf the domain looks off (e.g. paypa1.com), don't click it — it's a scam."
+                }
+            },
+            {
+                "scam", new List<string>
+                {
+                    "🚨 If it sounds too good to be true, it is.\n\nNever send money or personal info to unverified sources.",
+                    "🚨 Romance scams are on the rise.\n\nBe cautious of online relationships that quickly ask for financial help.",
+                    "🚨 Tech support scams often use pop-ups.\n\nMicrosoft and Apple will NEVER call you unsolicited about your computer."
+                }
+            },
+            {
+                "privacy", new List<string>
+                {
+                    "🔒 Review app permissions regularly. Many apps request access to your camera, contacts, or location — only allow what's necessary.",
+                    "🔒 Use a VPN on public Wi-Fi to encrypt your traffic and stop others from snooping on your data.",
+                    "🔒 Enable two-factor authentication (2FA) on all important accounts — email, banking, and social media especially."
+                }
+            },
+            {
+                "malware", new List<string>
+                {
+                    "🦠 Never download software from unknown websites.\n\nAlways use official sources or verified app stores.",
+                    "🦠 Keep your operating system updated.\n\nUpdates patch security vulnerabilities that malware exploits.",
+                    "🦠 Ransomware can encrypt all your files.\n\nBack up your data regularly to an offline or cloud storage."
+                }
+            },
+            {
+                "vpn", new List<string>
+                {
+                    "🌍 A VPN encrypts your internet traffic.\n\nIt hides your IP address and protects your data on public networks.\n\nRecommended: ProtonVPN, Mullvad, NordVPN.",
+                    "🌍 Not all VPNs are trustworthy.\n\nAvoid free VPNs — they often sell your data to third parties."
+                }
+            },
+            {
+                "2fa", new List<string>
+                {
+                    "🔐 Two-factor authentication adds a second layer of security.\n\nEven if your password is stolen, attackers can't access your account without your second factor.",
+                    "🔐 Use an authenticator app like Google Authenticator or Authy.\n\nSMS-based 2FA can be intercepted via SIM swapping — an app is safer."
+                }
+            }
+        };
+
+        // ================= HELPERS =================
+        private string GetTopicResponse(string topic)
+        {
+            foreach (var key in topicResponses.Keys)
+            {
+                if (topic.Contains(key))
+                {
+                    lastTopic = topic;
+                    var list = topicResponses[key];
+                    return list[rand.Next(list.Count)];
+                }
+            }
+            return "I didn't catch that topic. Try asking about passwords, phishing, or privacy.";
+        }
+
+        private string GetDetailedInfo(string topic)
+        {
+            switch (topic)
+            {
+                case "password":
+                    return "🔑 More on passwords:\n\n• Minimum 12 characters\n• Mix letters, numbers, symbols\n• Use a password manager\n• Enable 2FA everywhere\n• Change passwords after any breach";
+                case "phishing":
+                    return "🎣 More on phishing:\n\n• Check sender email addresses carefully\n• Don't click links — go directly to the website\n• Report phishing emails to your IT/provider\n• Use email filters and spam detection";
+                case "scam":
+                    return "🚨 More on scams:\n\n• Never send money to unverified contacts\n• Verify identities through official channels\n• Be suspicious of unsolicited contact\n• Report scams to local authorities";
+                case "privacy":
+                    return "🔒 More on privacy:\n\n• Audit app permissions monthly\n• Use encrypted messaging (Signal)\n• Opt out of data tracking where possible\n• Use a VPN on public networks";
+                case "malware":
+                    return "🦠 More on malware:\n\n• Keep OS and software updated\n• Use reputable antivirus software\n• Never open attachments from unknown senders\n• Back up data regularly";
+                case "safe browsing":
+                    return "🌐 More on safe browsing:\n\n• Use a privacy-focused browser (Firefox, Brave)\n• Install uBlock Origin to block malicious ads\n• Clear cookies and cache regularly\n• Avoid public Wi-Fi without a VPN";
+                default:
+                    return $"Let's go deeper into {topic}. Always double-check sources and stay alert online. Ask me something specific!";
             }
         }
     }
