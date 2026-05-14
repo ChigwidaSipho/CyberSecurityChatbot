@@ -23,7 +23,7 @@ namespace CyberSecurityChatbot
             Loaded += (s, e) => ShowWelcome();
         }
 
-        private void ShowWelcome()
+        private void ShowWelcome() 
         {
             PlayGreeting("ChatBotGreeting.wav");
             AppendBotMessage(

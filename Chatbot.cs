@@ -55,7 +55,7 @@ namespace CyberSecurityChatbot
             // ================= SENTIMENT (via Sentiment class) =================
             string sentimentResponse = sentiment.GetSentiment(lower);
             if (!string.IsNullOrEmpty(sentimentResponse))
-            {
+            { 
                 // Append a topic tip if the user is worried or scared
                 if (lower.Contains("worried") || lower.Contains("scared") || lower.Contains("anxious"))
                 {
