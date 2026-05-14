@@ -27,20 +27,31 @@ namespace CyberSecurityChatbot
         {
             PlayGreeting("ChatBotGreeting.wav");
             AppendBotMessage(
-                "  ██████╗██╗   ██╗██████╗ ███████╗██████╗ \n" + 
-                "  ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗\n" +
-                "  ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝\n" +
-                "  ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗\n" +
-                "  ╚██████╗   ██║   ██████╔╝███████╗██║  ██║\n" +
-                "   ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝\n\n" +
-                "👋 Welcome to the Cybersecurity Awareness System!\n\n" +
-                "Ask me about:\n" +
-                "• Password safety\n" +
-                "• Phishing scams\n" +
-                "• Safe browsing\n" +
-                "• Privacy protection\n\n" +
-                "Try typing: \"What is phishing?\""
-            );
+
+"╔══════════════════════════════════════╗\n" +
+"║        🤖 Y.O.U CYBER BOT 🤖        ║\n" +
+"╚══════════════════════════════════════╝\n\n" +
+
+"🛡 Welcome to your cybersecurity assistant.\n\n" +
+
+"I can help you with:\n" +
+"• Password safety\n" +
+"• Phishing & scams\n" +
+"• Privacy protection\n" +
+"• Safe browsing\n" +
+"• Malware awareness\n\n" +
+
+"💬 Try asking:\n" +
+"\"What is phishing?\"\n" +
+"\"How do I stay safe online?\"\n" +
+"\"Give me a password tip\"\n\n" +
+
+"━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+"⚡ Status: ONLINE\n" +
+"🔒 Protection: ACTIVE\n" +
+"━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+);
         }
 
         private void PlayGreeting(string fileName)
@@ -156,4 +167,4 @@ namespace CyberSecurityChatbot
             };
         }
     }
-}
+} 
