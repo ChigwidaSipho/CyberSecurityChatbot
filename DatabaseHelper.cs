@@ -20,7 +20,7 @@ namespace CyberSecurityChatbot
                 CREATE TABLE IF NOT EXISTS tasks (
                     id          INT AUTO_INCREMENT PRIMARY KEY,
                     title       VARCHAR(200)  NOT NULL,
-                    description TEXT,
+                    description TEXT,        
                     reminder    DATE,
                     is_complete TINYINT(1)    NOT NULL DEFAULT 0,
                     created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
