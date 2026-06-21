@@ -14,7 +14,7 @@ namespace CyberSecurityChatbot
         public string Tips { get; set; }
         public string SentimentLabel { get; set; }
         public DateTime Timestamp { get; set; }
-
+                                            
         // ===== CONSTRUCTOR =====
         public ChatbotModel()
         {
