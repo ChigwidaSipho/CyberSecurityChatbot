@@ -20,7 +20,7 @@ namespace CyberSecurityChatbot
         private int  _current = 0;
         private int  _score   = 0;
         private bool _answered = false;
-
+          
         // ===== BRUSHES =====
         private static readonly SolidColorBrush BrushCorrect   = new SolidColorBrush(Color.FromRgb(0x00, 0x3D, 0x1F));
         private static readonly SolidColorBrush BrushWrong     = new SolidColorBrush(Color.FromRgb(0x4A, 0x00, 0x00));
