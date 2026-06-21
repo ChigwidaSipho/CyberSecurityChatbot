@@ -8,7 +8,7 @@ namespace CyberSecurityChatbot
     /// Task Assistant tab — add, view, complete, and delete cybersecurity tasks.
     /// Stores everything in MySQL via DatabaseHelper.
     /// </summary>
-    public partial class TaskManagerControl : UserControl
+    public partial class TaskManagerControl : UserControl  
     {
         private Chatbot _bot;
 
@@ -47,7 +47,7 @@ namespace CyberSecurityChatbot
                 var tasks = DatabaseHelper.GetAllTasks();
                 TaskList.ItemsSource = null;
                 TaskList.ItemsSource = tasks;
-            }
+            }  
             catch (Exception ex)
             {
                 ShowDbError($"⚠️ Could not load tasks: {ex.Message}");
