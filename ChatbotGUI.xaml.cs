@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,38 +8,55 @@ using System.Windows.Media.Effects;
 
 namespace CyberSecurityChatbot
 {
+    /// <summary>
+    /// Chat tab — renders message bubbles and routes user input to the shared Chatbot engine.
+    /// SetBot() must be called by MainWindow after InitializeComponent() to inject the shared bot.
+    /// </summary>
     public partial class ChatbotGUI : UserControl
     {
-        private readonly Chatbot _bot = new Chatbot();
-
-        private static readonly SolidColorBrush BrushBotBubble = new SolidColorBrush(Color.FromRgb(0x1A, 0x27, 0x40));
+        // ===== BRUSHES =====
+        private static readonly SolidColorBrush BrushBotBubble  = new SolidColorBrush(Color.FromRgb(0x1A, 0x27, 0x40));
         private static readonly SolidColorBrush BrushUserBubble = new SolidColorBrush(Color.FromRgb(0x0E, 0x3A, 0x2F));
-        private static readonly SolidColorBrush BrushCyan = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
-        private static readonly SolidColorBrush BrushGreen = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x88));
+        private static readonly SolidColorBrush BrushCyan       = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
+        private static readonly SolidColorBrush BrushGreen      = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x88));
 
+        private Chatbot _bot;
+
+        // ===== PARAMETERLESS CONSTRUCTOR (required by XAML designer) =====
         public ChatbotGUI()
         {
             InitializeComponent();
+        }
+
+        // ===== INJECTION =====
+        /// <summary>Called by MainWindow to inject the shared Chatbot instance.</summary>
+        public void SetBot(Chatbot bot)
+        {
+            _bot = bot;
+            // Wire Loaded here so we don't show welcome before bot is ready
             Loaded += (s, e) => ShowWelcome();
         }
 
-        private void ShowWelcome() 
+        // ===== WELCOME =====
+        private void ShowWelcome()
         {
             PlayGreeting("ChatBotGreeting.wav");
+
             AppendBotMessage(
-                "  ██████╗██╗   ██╗██████╗ ███████╗██████╗ \n" + 
-                "  ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗\n" +
-                "  ██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝\n" +
-                "  ██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗\n" +
-                "  ╚██████╗   ██║   ██████╔╝███████╗██║  ██║\n" +
-                "   ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝\n\n" +
-                "👋 Welcome to the Cybersecurity Awareness System!\n\n" +
-                "Ask me about:\n" +
-                "• Password safety\n" +
-                "• Phishing scams\n" +
-                "• Safe browsing\n" +
-                "• Privacy protection\n\n" +
-                "Try typing: \"What is phishing?\""
+                "╔══════════════════════════════════════╗\n" +
+                "║        🤖  Y.O.U  CYBER BOT  🤖     ║\n" +
+                "╚══════════════════════════════════════╝\n\n" +
+                "🛡 Welcome to your cybersecurity assistant.\n\n" +
+                "I can help you with:\n" +
+                "• Password safety      • Phishing & scams\n" +
+                "• Privacy protection   • Safe browsing\n" +
+                "• Malware awareness    • VPN & 2FA\n\n" +
+                "💬 Try: \"What is phishing?\"  or  \"Give me a password tip\"\n" +
+                "📋 Say: \"Add task\" to manage your security tasks\n" +
+                "🎮 Say: \"Start quiz\" to test your knowledge\n\n" +
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                "⚡ Status: ONLINE      🔒 Protection: ACTIVE\n" +
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             );
         }
 
@@ -48,14 +65,17 @@ namespace CyberSecurityChatbot
             try
             {
                 string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
-                var player = new System.Media.SoundPlayer(path);
-                player.Play();
+                if (System.IO.File.Exists(path))
+                    new System.Media.SoundPlayer(path).Play();
             }
-            catch { }
+            catch { /* Audio is non-critical */ }
         }
 
+        // ===== SEND =====
         private void SendMessage()
         {
+            if (_bot == null) return;
+
             string text = InputBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(text)) return;
 
@@ -83,18 +103,14 @@ namespace CyberSecurityChatbot
             }
         }
 
-        private void AppendBotMessage(string message) => AddMessageRow(message, BrushBotBubble, BrushCyan, HorizontalAlignment.Left, true);
-        private void AppendUserMessage(string message) => AddMessageRow(message, BrushUserBubble, BrushGreen, HorizontalAlignment.Right, false);
+        // ===== MESSAGE RENDERING =====
+        private void AppendBotMessage(string msg)  => AddMessageRow(msg, BrushBotBubble,  BrushCyan,  HorizontalAlignment.Left,  isBot: true);
+        private void AppendUserMessage(string msg) => AddMessageRow(msg, BrushUserBubble, BrushGreen, HorizontalAlignment.Right, isBot: false);
 
         private void AddMessageRow(string message, Brush background, Brush labelColor,
-            HorizontalAlignment align, bool isBot)
+                                   HorizontalAlignment align, bool isBot)
         {
-            var row = new Grid
-            {
-                Margin = new Thickness(0, 4, 0, 4),
-                Opacity = 0
-            };
-
+            var row = new Grid { Margin = new Thickness(0, 4, 0, 4), Opacity = 0 };
             row.ColumnDefinitions.Add(new ColumnDefinition());
             row.ColumnDefinitions.Add(new ColumnDefinition());
 
@@ -110,47 +126,46 @@ namespace CyberSecurityChatbot
                 ChatScroll.ScrollToEnd();
             });
 
-            var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
-            row.BeginAnimation(OpacityProperty, anim);
+            row.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
         }
 
-        private Border BuildBubble(string message, Brush background,
-            Brush labelColor, HorizontalAlignment align, bool isBot)
+        private Border BuildBubble(string message, Brush background, Brush labelColor,
+                                   HorizontalAlignment align, bool isBot)
         {
             var stack = new StackPanel();
 
             stack.Children.Add(new TextBlock
             {
-                Text = isBot ? "🛡 CyberBot" : "👤 You",
+                Text       = isBot ? "🛡 CyberBot" : "👤 You",
                 Foreground = labelColor,
-                FontSize = 10,
+                FontSize   = 10,
                 FontFamily = new FontFamily("Consolas"),
-                Margin = new Thickness(0, 0, 0, 4)
+                Margin     = new Thickness(0, 0, 0, 4)
             });
 
             stack.Children.Add(new TextBlock
             {
-                Text = message,
-                Foreground = Brushes.White,
-                FontSize = 13,
-                FontFamily = new FontFamily("Consolas"),
+                Text         = message,
+                Foreground   = Brushes.White,
+                FontSize     = 13,
+                FontFamily   = new FontFamily("Consolas"),
                 TextWrapping = TextWrapping.Wrap
             });
 
             return new Border
             {
-                Background = background,
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(12),
-                Margin = new Thickness(5),
-                MaxWidth = 520,
+                Background          = background,
+                CornerRadius        = new CornerRadius(12),
+                Padding             = new Thickness(12),
+                Margin              = new Thickness(5),
+                MaxWidth            = 520,
                 HorizontalAlignment = align,
-                Child = stack,
-                Effect = new DropShadowEffect
+                Child               = stack,
+                Effect              = new DropShadowEffect
                 {
-                    Color = Colors.Black,
-                    BlurRadius = 10,
-                    Opacity = 0.25,
+                    Color       = Colors.Black,
+                    BlurRadius  = 10,
+                    Opacity     = 0.25,
                     ShadowDepth = 1
                 }
             };

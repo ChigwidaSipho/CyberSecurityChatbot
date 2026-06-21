@@ -1,20 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CyberSecurityChatbot
 {
+    /// <summary>
+    /// Represents the current chatbot user.
+    /// Stores identity and preference data used across all features.
+    /// </summary>
     public class User
     {
-        // A simple User class with a Name property
         public string Name { get; set; }
+        public string Interest { get; set; }   // e.g. "privacy", "phishing"
+        public DateTime SessionStart { get; set; }
 
-        public User(string name)
+        public User()
+        {
+            SessionStart = DateTime.Now;
+        }
+
+        public User(string name) : this()
         {
             Name = name;
         }
 
+        /// <summary>Returns a display-friendly greeting token.</summary>
+        public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "there" : Name;
+
+        /// <summary>True once the user has provided their name.</summary>
+        public bool IsIdentified => !string.IsNullOrWhiteSpace(Name);
     }
 }

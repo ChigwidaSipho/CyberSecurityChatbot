@@ -1,0 +1,104 @@
+<UserControl x:Class="CyberSecurityChatbot.ActivityLogControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#0D0F1A">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="BgPanel"     Color="#111827"/>
+        <SolidColorBrush x:Key="BgCard"      Color="#0D1526"/>
+        <SolidColorBrush x:Key="AccentCyan"  Color="#00FFFF"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#00FF88"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
+        <SolidColorBrush x:Key="BorderCol"   Color="#1E3A5F"/>
+
+        <Style x:Key="RefreshBtn" TargetType="Button">
+            <Setter Property="Background"      Value="#003D66"/>
+            <Setter Property="Foreground"      Value="#00FFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontFamily"      Value="Consolas"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Padding"         Value="16,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#005580"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource BorderCol}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="24,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="📜  ACTIVITY LOG"
+                               Foreground="{StaticResource AccentCyan}"
+                               FontSize="14" FontWeight="Bold"
+                               FontFamily="Consolas"/>
+                    <TextBlock x:Name="LogCountLabel"
+                               Text="Showing last 10 of 0 actions"
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="10" FontFamily="Consolas"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Content="🔄  Refresh"
+                        Style="{StaticResource RefreshBtn}"
+                        VerticalAlignment="Center"
+                        Click="Refresh_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- Log entries -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="24,16">
+            <StackPanel x:Name="LogPanel"/>
+        </ScrollViewer>
+
+        <!-- Show More footer -->
+        <Border Grid.Row="2" Background="{StaticResource BgPanel}"
+                BorderBrush="{StaticResource BorderCol}"
+                BorderThickness="0,1,0,0" Padding="24,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="FooterLabel"
+                           Foreground="{StaticResource TextMuted}"
+                           FontFamily="Consolas" FontSize="11"
+                           VerticalAlignment="Center"/>
+                <Button x:Name="ShowMoreBtn" Grid.Column="1"
+                        Content="Show More ▼"
+                        Style="{StaticResource RefreshBtn}"
+                        Visibility="Collapsed"
+                        Click="ShowMore_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
