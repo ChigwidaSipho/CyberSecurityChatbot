@@ -15,29 +15,24 @@ namespace CyberSecurityChatbot
     public partial class ChatbotGUI : UserControl
     {
         // ===== BRUSHES =====
-        private static readonly SolidColorBrush BrushBotBubble  = new SolidColorBrush(Color.FromRgb(0x1A, 0x27, 0x40));
+        private static readonly SolidColorBrush BrushBotBubble = new SolidColorBrush(Color.FromRgb(0x1A, 0x27, 0x40));
         private static readonly SolidColorBrush BrushUserBubble = new SolidColorBrush(Color.FromRgb(0x0E, 0x3A, 0x2F));
-        private static readonly SolidColorBrush BrushCyan       = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
-        private static readonly SolidColorBrush BrushGreen      = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x88));
+        private static readonly SolidColorBrush BrushCyan = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF));
+        private static readonly SolidColorBrush BrushGreen = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x88));
 
         private Chatbot _bot;
 
-        // ===== PARAMETERLESS CONSTRUCTOR (required by XAML designer) =====
         public ChatbotGUI()
         {
             InitializeComponent();
         }
 
-        // ===== INJECTION =====
-        /// <summary>Called by MainWindow to inject the shared Chatbot instance.</summary>
         public void SetBot(Chatbot bot)
         {
             _bot = bot;
-            // Wire Loaded here so we don't show welcome before bot is ready
             Loaded += (s, e) => ShowWelcome();
         }
 
-        // ===== WELCOME =====
         private void ShowWelcome()
         {
             PlayGreeting("ChatBotGreeting.wav");
@@ -68,10 +63,9 @@ namespace CyberSecurityChatbot
                 if (System.IO.File.Exists(path))
                     new System.Media.SoundPlayer(path).Play();
             }
-            catch { /* Audio is non-critical */ }
+            catch { }
         }
 
-        // ===== SEND =====
         private void SendMessage()
         {
             if (_bot == null) return;
@@ -103,9 +97,11 @@ namespace CyberSecurityChatbot
             }
         }
 
-        // ===== MESSAGE RENDERING =====
-        private void AppendBotMessage(string msg)  => AddMessageRow(msg, BrushBotBubble,  BrushCyan,  HorizontalAlignment.Left,  isBot: true);
-        private void AppendUserMessage(string msg) => AddMessageRow(msg, BrushUserBubble, BrushGreen, HorizontalAlignment.Right, isBot: false);
+        private void AppendBotMessage(string msg) =>
+            AddMessageRow(msg, BrushBotBubble, BrushCyan, HorizontalAlignment.Left, true);
+
+        private void AppendUserMessage(string msg) =>
+            AddMessageRow(msg, BrushUserBubble, BrushGreen, HorizontalAlignment.Right, false);
 
         private void AddMessageRow(string message, Brush background, Brush labelColor,
                                    HorizontalAlignment align, bool isBot)
@@ -126,7 +122,8 @@ namespace CyberSecurityChatbot
                 ChatScroll.ScrollToEnd();
             });
 
-            row.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
+            row.BeginAnimation(OpacityProperty,
+                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
         }
 
         private Border BuildBubble(string message, Brush background, Brush labelColor,
@@ -136,36 +133,36 @@ namespace CyberSecurityChatbot
 
             stack.Children.Add(new TextBlock
             {
-                Text       = isBot ? "🛡 CyberBot" : "👤 You",
+                Text = isBot ? "🛡 CyberBot" : "👤 You",
                 Foreground = labelColor,
-                FontSize   = 10,
+                FontSize = 10,
                 FontFamily = new FontFamily("Consolas"),
-                Margin     = new Thickness(0, 0, 0, 4)
+                Margin = new Thickness(0, 0, 0, 4)
             });
 
             stack.Children.Add(new TextBlock
             {
-                Text         = message,
-                Foreground   = Brushes.White,
-                FontSize     = 13,
-                FontFamily   = new FontFamily("Consolas"),
+                Text = message,
+                Foreground = Brushes.White,
+                FontSize = 13,
+                FontFamily = new FontFamily("Consolas"),
                 TextWrapping = TextWrapping.Wrap
             });
 
             return new Border
             {
-                Background          = background,
-                CornerRadius        = new CornerRadius(12),
-                Padding             = new Thickness(12),
-                Margin              = new Thickness(5),
-                MaxWidth            = 520,
+                Background = background,
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(12),
+                Margin = new Thickness(5),
+                MaxWidth = 520,
                 HorizontalAlignment = align,
-                Child               = stack,
-                Effect              = new DropShadowEffect
+                Child = stack,
+                Effect = new DropShadowEffect
                 {
-                    Color       = Colors.Black,
-                    BlurRadius  = 10,
-                    Opacity     = 0.25,
+                    Color = Colors.Black,
+                    BlurRadius = 10,
+                    Opacity = 0.25,
                     ShadowDepth = 1
                 }
             };
