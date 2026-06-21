@@ -9,13 +9,13 @@ namespace CyberSecurityChatbot
         private ActivityLog _log;
         private bool _showAll = false;
 
-        public ActivityLogControl()
+        public ActivityLogControl()      
         {
             InitializeComponent();
         }
 
         public void SetLog(ActivityLog log)
-        {
+        {   
             _log = log;
             Refresh();
         }
