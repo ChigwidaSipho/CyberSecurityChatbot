@@ -2,71 +2,54 @@
 
 namespace CyberSecurityChatbot
 {
-    // Delegate for building a sentiment response string
     public delegate string SentimentResponseHandler(string sentiment, string input);
-
-    // Void delegate used for the event (logging, UI updates, etc.)
     public delegate void SentimentDetectedEventHandler(string sentiment, string input);
 
-    /// <summary>
-    /// Detects emotional tone in user input and returns an empathetic response.
-    /// Fires OnSentimentDetected so callers can log or react without coupling.
-    /// </summary>
     public class Sentiment
     {
-        // ===== EVENT =====
         public event SentimentDetectedEventHandler OnSentimentDetected;
 
-        // ===== PUBLIC ENTRY POINT =====
-        /// <summary>
-        /// Returns a non-empty empathetic response string if a sentiment is found,
-        /// otherwise returns an empty string so the caller falls through to topic logic.
-        /// </summary>
         public string GetSentiment(string input)
         {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
             input = input.ToLower();
 
-            // --- Negative / anxious ---
-            if (ContainsAny(input, "worried", "scared", "anxious", "nervous", "afraid"))
-                return ProcessSentiment("worried", input,
-                    (s, _) => "It sounds like you're feeling worried. Don't stress — I'm here to help you stay safe online, step by step. 💙");
+            if (Contains(input, "worried", "scared", "anxious", "nervous", "afraid"))
+                return Handle("worried", input,
+                    "It sounds like you're worried. Take it step by step — you're safe here. 💙");
 
-            // --- Confused ---
-            if (ContainsAny(input, "confused", "don't understand", "dont understand", "lost", "unclear"))
-                return ProcessSentiment("confused", input,
-                    (s, _) => "No worries — cybersecurity can feel overwhelming at first. Let me break it down for you. 🧩");
+            if (Contains(input, "confused", "don't understand", "dont understand", "lost", "unclear"))
+                return Handle("confused", input,
+                    "No stress — I’ll break it down simply for you. 🧩");
 
-            // --- Frustrated / angry ---
-            if (ContainsAny(input, "frustrated", "angry", "annoyed", "upset", "mad"))
-                return ProcessSentiment("frustrated", input,
-                    (s, _) => "I hear you — it can be really frustrating dealing with online threats. Let's tackle this together. 💪");
+            if (Contains(input, "frustrated", "angry", "annoyed", "upset", "mad"))
+                return Handle("frustrated", input,
+                    "I get it — this can be frustrating. Let’s fix it together. 💪");
 
-            // --- Curious / interested ---
-            if (ContainsAny(input, "curious", "interesting", "intrigued", "want to know", "tell me"))
-                return ProcessSentiment("curious", input,
-                    (s, _) => "Love the curiosity! 😎 Learning about cybersecurity is one of the best things you can do to stay safe.");
+            if (Contains(input, "curious", "interesting", "intrigued", "tell me"))
+                return Handle("curious", input,
+                    "Good curiosity 😎 That’s how people stay safe online.");
 
-            // --- Happy / positive ---
-            if (ContainsAny(input, "happy", "great", "awesome", "excited", "good"))
-                return ProcessSentiment("happy", input,
-                    (s, _) => "That's the spirit! 🎉 Staying positive and informed is the best defence online.");
+            if (Contains(input, "happy", "great", "awesome", "good", "excited"))
+                return Handle("happy", input,
+                    "Nice 👍 Staying informed is the best protection online.");
 
             return string.Empty;
         }
 
-        // ===== PRIVATE HELPERS =====
-
-        private string ProcessSentiment(string sentiment, string input, SentimentResponseHandler handler)
+        private string Handle(string sentiment, string input, string response)
         {
-            // Fire the event for any subscribers (activity log, UI, etc.)
             OnSentimentDetected?.Invoke(sentiment, input);
-            return handler(sentiment, input);
+            return response;
         }
 
-        private static bool ContainsAny(string input, params string[] words)
+        private static bool Contains(string input, params string[] words)
         {
-            foreach (var word in words)
-                if (input.Contains(word)) return true;
+            foreach (var w in words)
+                if (input.Contains(w))
+                    return true;
             return false;
         }
     }

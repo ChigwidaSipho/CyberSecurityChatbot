@@ -1,359 +1,341 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace CyberSecurityChatbot
 {
-    // ===== DELEGATES =====
     public delegate string ResponseHandler(string input);
     public delegate void NavigationHandler(string destination);
 
-    /// <summary>
-    /// Core chatbot engine — Part 1 + 2 + 3 logic unified.
-    /// Handles keyword matching, random responses, sentiment, memory, conversation flow,
-    /// activity logging, and NLP-triggered navigation to Tasks / Quiz / Log tabs.
-    /// </summary>
     public class Chatbot
     {
-        // ===== DEPENDENCIES =====
         private readonly User _user = new User();
         private readonly Sentiment _sentiment = new Sentiment();
         private readonly Random _rand = new Random();
 
-        /// <summary>Shared activity log — all features write here.</summary>
         public readonly ActivityLog Log = new ActivityLog();
 
-        // Last cybersecurity topic discussed (enables follow-up handling)
-        private string _lastTopic = string.Empty;
+        private string _lastTopic = "";
+        private bool _hasGreeted = false;
 
-        // ===== DELEGATES + EVENT =====
-        private readonly ResponseHandler _responseHandler;
-
-        /// <summary>
-        /// Fired when the chat detects an NLP intent to navigate to another tab.
-        /// MainWindow subscribes and switches the selected TabItem.
-        /// </summary>
         public event NavigationHandler NavigateRequested;
 
-        // ===== CONSTRUCTOR =====
+        private readonly ResponseHandler _responseHandler;
+
         public Chatbot()
         {
             _responseHandler = ProcessResponse;
 
-            // Log every detected sentiment via event
             _sentiment.OnSentimentDetected += (s, input) =>
-                Log.Add("Sentiment detected", s);
+                Log.Add("Sentiment", s);
         }
 
-        // ===== PUBLIC API =====
         public string GetResponse(string input) => _responseHandler(input);
 
-        /// <summary>Display name for personalisation across tabs.</summary>
         public string UserName => _user.DisplayName;
 
-        /// <summary>True once the user has provided their name.</summary>
-        public bool UserIsIdentified => _user.IsIdentified;
+        // ================= PIPELINE =================
+        // Each handler returns null if it doesn't apply. Order matters:
+        // TryHandleTopic runs before TryHandleHelp so "help with passwords"
+        // resolves to the password tip, not the generic help menu.
+        private List<Func<string, string>> BuildPipeline() => new List<Func<string, string>>
+        {
+            TryHandleName,
+            TryHandleGreeting,
+            TryHandleNavigation,
+            TryHandleFollowUp,
+            TryHandleTopic,
+            TryHandleSentiment,
+            TryHandleHelp
+        };
 
-        // ===== MAIN RESPONSE LOGIC =====
         private string ProcessResponse(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
-                return "Please type a message — I'm listening! 👂";
+                return "Type something so I can help.";
 
-            string lower = input.ToLower().Trim();
+            string text = input.Trim().ToLowerInvariant();
 
-            // ── NAME ──────────────────────────────────────────────────────────
-            if (lower.Contains("my name is"))
+            foreach (var handler in BuildPipeline())
             {
-                string name = input.ToLower().Replace("my name is", "").Trim();
-                if (name.Length > 0)
-                    _user.Name = char.ToUpper(name[0]) + name.Substring(1);
-                Log.Add("User identified", _user.Name);
-                return $"Nice to meet you, {_user.Name}! 👋 Ask me anything about cybersecurity.";
+                string result = handler(text);
+                if (result != null)
+                    return result;
             }
 
-            // ── GREETINGS ─────────────────────────────────────────────────────
-            if (ContainsAny(lower, "hello", "hi", "hey", "howzit", "good morning", "good day"))
+            string[] fallback =
             {
-                Log.Add("Greeting");
-                return $"Hey, {_user.DisplayName}! 👋 What can I help you with today?\n\n" +
-                       "• Passwords  • Phishing  • Safe Browsing\n" +
-                       "• Privacy    • Malware   • VPN  • 2FA\n\n" +
-                       "Or try: \"Add task\" / \"Start quiz\" / \"Show activity log\"";
+                "Not sure I caught that one. I'm good with passwords, phishing, privacy, and malware — or say 'tasks' or 'quiz' if you want to dive in.",
+                "Hmm, that didn't land for me. Try asking about passwords, phishing, privacy, or malware?",
+                "I'm not following — but I do know my stuff on passwords, phishing, privacy, and malware. Pick one?"
+            };
+
+            return fallback[_rand.Next(fallback.Length)];
+        }
+
+        // ================= NAME =================
+        private string TryHandleName(string text)
+        {
+            const string marker = "my name is";
+            if (!text.Contains(marker)) return null;
+
+            int idx = text.IndexOf(marker, StringComparison.Ordinal);
+            string remainder = text.Substring(idx + marker.Length).Trim();
+
+            // Take only the first name-like token, so trailing chatter like
+            // "my name is anna, nice to meet you" doesn't get swallowed.
+            var match = Regex.Match(remainder, @"^[a-zA-Z]+(?:[-'][a-zA-Z]+)*");
+            string name = match.Success ? match.Value : "";
+
+            if (string.IsNullOrWhiteSpace(name))
+                return "Hmm, didn't quite catch the name — mind trying 'my name is Alex'?";
+
+            _user.Name = char.ToUpper(name[0]) + name.Substring(1);
+            Log.Add("Name set", _user.Name);
+
+            string[] nameReplies =
+            {
+                $"{_user.Name}! Good to meet you. I'll remember that.",
+                $"Got it, {_user.Name} — locked in. What's on your mind?",
+                $"Nice, {_user.Name}. I'm bad with a lot of things but not names — you're set.",
+                $"{_user.Name}, noted. Let's get into it — what do you want to know?"
+            };
+
+            return nameReplies[_rand.Next(nameReplies.Length)];
+        }
+
+        // ================= GREETING =================
+        private static readonly Regex GreetingPattern =
+            new Regex(@"\b(hi|hello|hey|howdy|yo)\b", RegexOptions.Compiled);
+
+        private string TryHandleGreeting(string text)
+        {
+            if (!GreetingPattern.IsMatch(text)) return null;
+
+            if (!_hasGreeted)
+            {
+                _hasGreeted = true;
+                Log.Add("First greeting");
+
+                return
+                    "Hey, what's up 👋 I'm your cybersecurity sidekick — basically here so you don't get owned by a sketchy email or a 12-year-old IT guy on the phone pretending to be your bank.\n\n" +
+                    "I can talk through:\n" +
+                    "• Passwords (yours are probably bad, no offense)\n" +
+                    "• Phishing (the emails, not the fish)\n" +
+                    "• Privacy\n• Malware\n\n" +
+                    "Or just say: add task | start quiz | show log";
             }
 
-            // ── NLP: NAVIGATION TO TASKS TAB ──────────────────────────────────
-            if (ContainsAny(lower, "add task", "new task", "create task", "my tasks", "view tasks",
-                                   "open tasks", "go to tasks", "show tasks", "task list",
-                                   "remind me", "set reminder", "add a reminder"))
+            string[] returnGreetings =
             {
-                Log.Add("NLP navigation", "Tasks tab");
-                NavigateRequested?.Invoke("tasks");
-                return $"Opening the Tasks tab for you, {_user.DisplayName}! 📋\n\n" +
-                       "You can add cybersecurity tasks like:\n" +
-                       "• Enable two-factor authentication\n" +
-                       "• Review privacy settings\n" +
-                       "• Update passwords\n\n" +
-                       "Set a reminder date so you don't forget! ✅";
+                $"Back again, {_user.DisplayName}? What's up.",
+                $"Hey {_user.DisplayName} — what are we dealing with this time?",
+                $"Yo {_user.DisplayName}, what do you need?",
+                $"{_user.DisplayName}! What's on your mind?"
+            };
+
+            return returnGreetings[_rand.Next(returnGreetings.Length)];
+        }
+
+        // ================= NAVIGATION =================
+        // destination key -> (matcher words, log message, possible replies)
+        // Words use whole-word matching (via ContainsAnyWord) so "task" doesn't
+        // false-positive inside "multitasking", "test" inside "contest", etc.
+        private readonly Dictionary<string, (string[] Words, string Log, string[] Replies)> _nav =
+            new Dictionary<string, (string[], string, string[])>
+            {
+                ["tasks"] = (
+                new[] { "task", "tasks", "to-do", "todo" },
+                "Tasks opened",
+                new[] { "Pulling up your tasks now.", "On it — tasks incoming.", "Let's see what you've got on your plate." }
+            ),
+                ["quiz"] = (
+                new[] { "quiz", "test" },
+                "Quiz opened",
+                new[] { "Quiz time. Let's see what you've actually retained.", "Alright, let's test you.", "Loading the quiz — no pressure." }
+            )
+            };
+
+        private string TryHandleNavigation(string text)
+        {
+            foreach (var kv in _nav)
+            {
+                if (ContainsAnyWord(text, kv.Value.Words))
+                {
+                    Log.Add(kv.Value.Log);
+                    NavigateRequested?.Invoke(kv.Key);
+
+                    var replies = kv.Value.Replies;
+                    return replies[_rand.Next(replies.Length)];
+                }
             }
 
-            // ── NLP: NAVIGATION TO QUIZ TAB ───────────────────────────────────
-            if (ContainsAny(lower, "start quiz", "take quiz", "play quiz", "quiz me",
-                                   "test my knowledge", "open quiz", "go to quiz",
-                                   "cybersecurity quiz", "trivia"))
+            if (ContainsWordOrPlural(text, "log"))
             {
-                Log.Add("NLP navigation", "Quiz tab");
-                NavigateRequested?.Invoke("quiz");
-                return $"Let's test your cybersecurity knowledge, {_user.DisplayName}! 🎮\n\n" +
-                       "The quiz covers:\n" +
-                       "• Phishing awareness\n" +
-                       "• Password security\n" +
-                       "• Safe browsing\n" +
-                       "• Social engineering\n\n" +
-                       "Good luck! 🔐";
-            }
-
-            // ── ACTIVITY LOG REQUEST ───────────────────────────────────────────
-            if (ContainsAny(lower, "activity log", "what have you done", "show log",
-                                   "recent actions", "history", "show activity", "open log"))
-            {
-                Log.Add("Activity log viewed");
+                Log.Add("Log opened");
                 NavigateRequested?.Invoke("log");
                 return Log.FormatRecent(10);
             }
 
-            // ── SENTIMENT ─────────────────────────────────────────────────────
-            string sentimentResponse = _sentiment.GetSentiment(lower);
-            if (!string.IsNullOrEmpty(sentimentResponse))
-            {
-                if (ContainsAny(lower, "worried", "scared", "anxious", "nervous", "afraid"))
-                {
-                    string tip = GetTopicResponse("phishing").Message;
-                    return $"{sentimentResponse}\n\nHere's something useful:\n\n{tip}";
-                }
-
-                if (ContainsAny(lower, "confused", "don't understand", "dont understand", "lost", "unclear"))
-                {
-                    if (!string.IsNullOrEmpty(_lastTopic))
-                        return $"{sentimentResponse}\n\n{GetDetailedInfo(_lastTopic).Tips}";
-                    return $"{sentimentResponse}\n\nWhat topic is confusing you?\n• Passwords  • Phishing  • Privacy  • Scams";
-                }
-
-                if (ContainsAny(lower, "frustrated", "angry", "annoyed", "upset", "mad"))
-                    return $"{sentimentResponse}\n\nWhat topic would you like help with?\n• Passwords  • Phishing  • Privacy  • Scams";
-
-                if (ContainsAny(lower, "curious", "interesting", "intrigued"))
-                    return $"{sentimentResponse}\n\nWhat would you like to explore?\n• Passwords  • Phishing  • Privacy  • Malware  • VPN  • 2FA";
-
-                return sentimentResponse;
-            }
-
-            // ── INTEREST / MEMORY ─────────────────────────────────────────────
-            if (ContainsAny(lower, "interested in", "i like", "i care about"))
-            {
-                foreach (var key in _topicResponses.Keys)
-                {
-                    if (lower.Contains(key))
-                    {
-                        _user.Interest = key;
-                        Log.Add("Interest recorded", key);
-                        return $"Got it! I'll remember that you're interested in {key}. 🧠\n\n" +
-                               GetTopicResponse(key).Message;
-                    }
-                }
-            }
-
-            // ── FOLLOW-UP ─────────────────────────────────────────────────────
-            if (ContainsAny(lower, "tell me more", "explain more", "more info",
-                                   "another tip", "give me more", "go on", "expand"))
-            {
-                if (!string.IsNullOrEmpty(_lastTopic))
-                {
-                    Log.Add("Follow-up requested", _lastTopic);
-                    return GetDetailedInfo(_lastTopic).Tips;
-                }
-                return "Sure! Which topic would you like more on?\n• Passwords  • Phishing  • Safe Browsing  • Privacy";
-            }
-
-            // ── HELP ──────────────────────────────────────────────────────────
-            if (ContainsAny(lower, "help", "what can you", "menu", "options"))
-            {
-                Log.Add("Help menu viewed");
-                return "Here's everything I can help you with:\n\n" +
-                       "🔑 Password safety\n🎣 Phishing & scams\n🌐 Safe browsing\n" +
-                       "🔒 Privacy protection\n🦠 Malware awareness\n🌍 VPN\n🔐 2FA\n\n" +
-                       "📋 \"Add task\" → go to Tasks tab\n" +
-                       "🎮 \"Start quiz\" → go to Quiz tab\n" +
-                       "📜 \"Show activity log\" → go to Log tab";
-            }
-
-            // ── KEYWORD MATCHING ──────────────────────────────────────────────
-            foreach (var key in _topicResponses.Keys)
-            {
-                if (lower.Contains(key))
-                {
-                    _lastTopic = key;
-                    Log.Add("Topic discussed", key);
-
-                    // Personalise if interest matches
-                    var model = GetTopicResponse(key);
-                    if (!string.IsNullOrEmpty(_user.Interest) && _user.Interest == key)
-                        return $"As someone interested in {key}, here's a useful tip:\n\n{model.Message}";
-
-                    return model.Message;
-                }
-            }
-
-            // ── SAFE BROWSING (multi-word key) ────────────────────────────────
-            if (lower.Contains("safe browsing") || lower.Contains("browsing") || lower.Contains("browser"))
-            {
-                _lastTopic = "safe browsing";
-                Log.Add("Topic discussed", "safe browsing");
-                string[] responses =
-                {
-                    "🌐 Always check for HTTPS and the padlock icon before entering personal info.",
-                    "🌐 Avoid downloading software from unknown websites — use official sources only.",
-                    "🌐 Keep your browser and extensions updated. Outdated browsers have exploitable vulnerabilities."
-                };
-                return responses[_rand.Next(responses.Length)];
-            }
-
-            // ── THANK YOU ─────────────────────────────────────────────────────
-            if (ContainsAny(lower, "thank", "thanks", "appreciate", "cheers"))
-            {
-                string[] thanks =
-                {
-                    "You're welcome! Stay safe out there. 🛡",
-                    "Happy to help! Remember — cybersecurity is everyone's responsibility.",
-                    "Anytime! Keep your accounts locked down tight. 🔒"
-                };
-                return thanks[_rand.Next(thanks.Length)];
-            }
-
-            // ── GOODBYE ───────────────────────────────────────────────────────
-            if (ContainsAny(lower, "bye", "goodbye", "exit", "quit", "see you"))
-            {
-                Log.Add("Session ended");
-                return $"Stay safe online, {_user.DisplayName}! 👋 Come back anytime.";
-            }
-
-            // ── DEFAULT (NLP fallback — varied so it's less annoying) ─────────
-            string[] fallback =
-            {
-                "I didn't quite catch that. Try asking about:\n• Passwords  • Phishing  • Safe browsing  • Privacy\n\nOr say \"Add task\" / \"Start quiz\"",
-                "I specialise in cybersecurity. Ask me about passwords, scams, VPN, or 2FA!",
-                "Not sure about that one — try rephrasing, or pick a topic: passwords, phishing, privacy, or safe browsing."
-            };
-            return fallback[_rand.Next(fallback.Length)];
+            return null;
         }
 
-        // ===== TOPIC DICTIONARY ==============================================
-        private readonly Dictionary<string, List<string>> _topicResponses = new Dictionary<string, List<string>>
+        // ================= FOLLOW-UP =================
+        private string TryHandleFollowUp(string text)
         {
+            if (!(text.Contains("tell me more") ||
+                  text.Contains("more info") ||
+                  text.Contains("explain more") ||
+                  text.Contains("go deeper")))
+                return null;
+
+            if (string.IsNullOrEmpty(_lastTopic))
+                return "Tell me a topic first (passwords, phishing, privacy, malware).";
+
+            Log.Add("Follow-up", _lastTopic);
+            return GetMore(_lastTopic);
+        }
+
+        // ================= TOPICS =================
+        private readonly Dictionary<string, List<string>> _topics =
+            new Dictionary<string, List<string>>
             {
-                "password", new List<string>
-                {
-                    "🔑 Strong passwords use uppercase, lowercase, numbers, and symbols.\nExample: Cyber@2026!\n\nNever reuse passwords across accounts.",
-                    "🔑 Try a passphrase: random words like Blue$Coffee*Moon2026\n\nLong, memorable, and hard to crack.",
-                    "🔑 Use a password manager like Bitwarden or 1Password.\n\nNever write passwords on sticky notes or store them in plain text!"
-                }
+                ["password"] = new List<string>
+            {
+                "Here's the thing about passwords: most get cracked through 'credential stuffing,' not genius hacking. Attackers grab leaked password lists from old breaches and just try them everywhere — so if you reuse one password, one leaked site means every account using it is exposed too. Use a unique password per account (a manager handles the remembering) and you cut that risk to almost zero.",
+                "Length matters more than people think. 'P@ssw0rd!' looks complex but it's actually weak — it's a known pattern attackers' tools already check for. A long random phrase like 'horse-battery-staple-lamp' is exponentially harder to brute-force, just because of sheer character count, and it's way easier for you to actually remember.",
+                "A password manager isn't overkill, it's the baseline now. It generates a unique, random password for every site and autofills it, so you never have to remember or reuse one. The only password you actually need to memorize is the one master password protecting the vault."
             },
+                ["phishing"] = new List<string>
             {
-                "phishing", new List<string>
-                {
-                    "🎣 Phishing is when attackers impersonate trusted companies to steal your info.\n\nAlways check the sender's email address before clicking anything.",
-                    "🎣 Watch for urgent language: 'Your account will be closed!'\n\nScammers use panic to bypass your judgement. Legitimate companies don't ask for passwords via email.",
-                    "🎣 Hover over links before clicking to see the real URL.\n\nIf the domain looks off (e.g. paypa1.com), don't click — it's a scam."
-                }
+                "Phishing works by manufacturing urgency — 'your account will be suspended in 24 hours,' 'unusual login detected, verify now.' That pressure is the tell: real companies rarely demand instant action by email. When you feel rushed, that's exactly when to slow down and check things properly.",
+                "The actual link is what matters, not the link text. An email can display 'yourbank.com' while the real underlying URL goes somewhere completely different. On desktop, hover over the link (don't click) to see the real destination in the corner of your screen before deciding.",
+                "Look-alike domains are the most common trick — 'paypa1.com' instead of 'paypal.com,' or a long subdomain trying to bury the real domain ('paypal.com.secure-verify.net' — the real domain there is secure-verify.net, not paypal). Always check what comes right before the final '.com/.net/etc.'"
             },
+                ["privacy"] = new List<string>
             {
-                "scam", new List<string>
-                {
-                    "🚨 If it sounds too good to be true, it is.\n\nNever send money or personal info to unverified sources.",
-                    "🚨 Romance scams are rising.\n\nBe cautious of online relationships that quickly ask for financial help.",
-                    "🚨 Tech support scams use alarming pop-ups.\n\nMicrosoft and Apple will NEVER call you unsolicited about your device."
-                }
+                "Two-factor authentication (2FA) means even if someone steals your password, they still need a second thing — usually a code from your phone — to get in. It's the single biggest upgrade you can make to any account, and it takes about 30 seconds to turn on in most account settings.",
+                "App permissions are worth actually checking. A flashlight app asking for your contacts or location has no functional reason to need that — it's collecting data it doesn't need for the job it does. Go through your phone's app permissions every few months and revoke anything that doesn't make sense.",
+                "Public Wi-Fi (cafes, airports) is unencrypted by default, meaning anyone else on that network can potentially see your traffic with the right tools. It's fine for casual browsing, but skip banking or anything sensitive unless you're on a VPN, which encrypts your connection end to end."
             },
+                ["malware"] = new List<string>
             {
-                "privacy", new List<string>
-                {
-                    "🔒 Review app permissions regularly. Only allow camera/contacts/location when genuinely needed.",
-                    "🔒 Use a VPN on public Wi-Fi to encrypt your traffic.",
-                    "🔒 Enable two-factor authentication (2FA) on all important accounts — email, banking, social media."
-                }
-            },
-            {
-                "malware", new List<string>
-                {
-                    "🦠 Never download software from unknown websites.\n\nAlways use official sources or verified app stores.",
-                    "🦠 Keep your operating system updated.\n\nUpdates patch vulnerabilities that malware actively exploits.",
-                    "🦠 Ransomware can encrypt all your files.\n\nBack up data regularly to offline or cloud storage."
-                }
-            },
-            {
-                "vpn", new List<string>
-                {
-                    "🌍 A VPN encrypts your internet traffic and hides your IP address.\n\nRecommended: ProtonVPN, Mullvad, NordVPN.",
-                    "🌍 Not all VPNs are trustworthy.\n\nAvoid free VPNs — they often sell your data to advertisers."
-                }
-            },
-            {
-                "2fa", new List<string>
-                {
-                    "🔐 Two-factor authentication adds a critical second layer of security.\n\nEven if your password leaks, attackers can't get in without your second factor.",
-                    "🔐 Use an authenticator app like Google Authenticator or Authy.\n\nSMS-based 2FA can be intercepted via SIM swapping — an app is much safer."
-                }
+                "Most malware doesn't 'hack' its way in — it gets invited in. Cracked software, fake 'free' versions of paid apps, and sketchy browser extensions are the most common delivery methods, because they trick you into installing the payload yourself.",
+                "Software updates aren't just new features — they patch known security holes. Once a vulnerability is public, attackers actively scan the internet for devices that haven't patched it yet. Staying updated closes that window before it gets exploited.",
+                "Ransomware specifically encrypts your files and demands payment to unlock them — and paying doesn't guarantee you get them back. The real defense is backups: if your files are backed up somewhere disconnected (cloud or offline drive), ransomware loses its leverage entirely."
             }
+            };
+
+        // Extra trigger words/phrases that should map to a topic even though
+        // they're not the topic's literal name or a simple plural of it.
+        private readonly Dictionary<string, string[]> _topicAliases = new Dictionary<string, string[]>
+        {
+            ["password"] = new[] { "pwd", "login info", "passcode" },
+            ["phishing"] = new[] { "phished", "phish", "scam email", "fake email" },
+            ["privacy"] = new[] { "2fa", "two factor", "two-factor", "mfa" },
+            ["malware"] = new[] { "virus", "ransomware", "spyware", "trojan" }
         };
 
-        // ===== HELPERS =======================================================
-
-        private ChatbotModel GetTopicResponse(string topic)
+        private string TryHandleTopic(string text)
         {
-            foreach (var key in _topicResponses.Keys)
+            foreach (var topic in _topics.Keys)
             {
-                if (topic.Contains(key))
+                bool isDirectMatch = ContainsWordOrPlural(text, topic);
+                bool isAliasMatch = _topicAliases.TryGetValue(topic, out var aliases)
+                    && aliases.Any(alias => text.Contains(alias));
+
+                if (isDirectMatch || isAliasMatch)
                 {
-                    _lastTopic = key;
-                    var list = _topicResponses[key];
-                    return new ChatbotModel { Topic = key, Message = list[_rand.Next(list.Count)] };
+                    _lastTopic = topic;
+                    Log.Add("Topic", topic);
+
+                    var list = _topics[topic];
+                    return list[_rand.Next(list.Count)];
                 }
             }
-            return new ChatbotModel { Message = "I didn't catch that topic. Try asking about passwords, phishing, or privacy." };
+
+            return null;
         }
 
-        private ChatbotModel GetDetailedInfo(string topic)
+        private string GetMore(string topic)
         {
             switch (topic)
             {
                 case "password":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🔑 More on passwords:\n\n• Minimum 12 characters\n• Mix letters, numbers, symbols\n• Use a password manager\n• Enable 2FA everywhere\n• Change passwords after any breach");
+                    return "Concretely: aim for 12+ characters, mix in numbers and symbols, but prioritize length over cleverness. Never reuse a password across two sites — if one site gets breached, that password gets tried everywhere else (this is called credential stuffing, and it's the #1 way accounts get taken over). Use a password manager like Bitwarden (free) or 1Password to generate and store unique ones, and turn on 2FA as a backup in case a password ever does leak.";
                 case "phishing":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🎣 More on phishing:\n\n• Check sender email addresses carefully\n• Don't click links — go to the site directly\n• Report phishing emails to your provider\n• Use email filters and spam detection");
-                case "scam":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🚨 More on scams:\n\n• Never send money to unverified contacts\n• Verify identities via official channels\n• Be suspicious of unsolicited contact\n• Report scams to the SAPS Cybercrime Unit");
+                    return "Concretely: check the sender's actual email address, not just the display name — 'Amazon Support' can be sent from any address. Hover over links to preview the real URL before clicking. Be suspicious of urgency ('act now,' 'account suspended'), unexpected attachments, and requests for passwords or payment info via email or text — legitimate companies don't ask for that through those channels. When in doubt, go directly to the site by typing the URL yourself instead of clicking the link.";
                 case "privacy":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🔒 More on privacy:\n\n• Audit app permissions monthly\n• Use encrypted messaging (Signal)\n• Opt out of data tracking where possible\n• Use a VPN on public networks");
+                    return "Concretely: turn on 2FA on every account that offers it — email, banking, social media, all of it. Go through your phone's app permissions every few months and revoke anything unnecessary (does a calculator app really need your location?). On public Wi-Fi, avoid logging into anything sensitive, or use a VPN if you have to. And check your social media privacy settings — a lot of personal info used in scams gets pulled straight from public profiles.";
                 case "malware":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🦠 More on malware:\n\n• Keep OS and software updated\n• Use reputable antivirus software\n• Never open attachments from unknown senders\n• Back up data regularly");
-                case "safe browsing":
-                    return ChatbotModel.ForTopic(topic, null,
-                        "🌐 More on safe browsing:\n\n• Use a privacy-focused browser (Firefox, Brave)\n• Install uBlock Origin to block malicious ads\n• Clear cookies and cache regularly\n• Avoid public Wi-Fi without a VPN");
+                    return "Concretely: only install software from official sources — app stores, or the developer's actual website, not third-party download sites. Keep your OS and apps updated, since most malware exploits known, already-patched vulnerabilities that people just haven't updated yet. Run a reputable antivirus in the background, and keep backups of important files somewhere disconnected from your main device — that's your real safety net against ransomware specifically.";
                 default:
-                    return ChatbotModel.ForTopic(topic, null,
-                        $"Let's go deeper into {topic}. Always double-check sources and stay alert online!");
+                    return "Don't actually have more on that one — try asking about passwords, phishing, privacy, or malware instead.";
             }
         }
 
-        private static bool ContainsAny(string input, params string[] words)
+        // ================= HELP =================
+        // Catches bare "I need help" / "can you help" with no specific topic
+        // attached. Runs after TryHandleTopic so "help with passwords" still
+        // resolves to the password tip instead of this generic menu.
+        // Note: "confused" and "lost" are intentionally NOT included here —
+        // Sentiment.cs already treats those as emotional cues and gives a
+        // warmer, more specific reply. Catching them here would steal that.
+        private static readonly Regex HelpPattern =
+            new Regex(@"\b(help|stuck|assist)\b", RegexOptions.Compiled);
+
+        private string TryHandleHelp(string text)
         {
-            foreach (var w in words)
-                if (input.Contains(w)) return true;
-            return false;
+            if (!HelpPattern.IsMatch(text)) return null;
+
+            Log.Add("Help requested");
+
+            string[] helpReplies =
+            {
+                "Sure thing — I can talk passwords, phishing, privacy, or malware. Or say 'tasks' to manage your security to-dos, or 'quiz' to test yourself. What sounds good?",
+                "Happy to help. Pick a lane: passwords, phishing, privacy, malware — or just say 'tasks' or 'quiz'.",
+                "I've got you. Ask me about passwords, phishing, privacy, or malware, or say 'tasks'/'quiz' to jump into those."
+            };
+
+            return helpReplies[_rand.Next(helpReplies.Length)];
+        }
+
+        // ================= SENTIMENT =================
+        // Skips sentiment if a known topic word is present, so e.g. "I'm
+        // worried about phishing" still routes to the phishing topic rather
+        // than getting swallowed by a generic sentiment reply.
+        private string TryHandleSentiment(string text)
+        {
+            if (_topics.Keys.Any(t => ContainsWordOrPlural(text, t)))
+                return null;
+
+            string sentiment = _sentiment.GetSentiment(text);
+            if (string.IsNullOrEmpty(sentiment))
+                return null;
+
+            Log.Add("Sentiment");
+            return sentiment;
+        }
+
+        // ================= HELPERS =================
+        // Whole-word matching avoids false positives like "task" inside
+        // "multitasking", "test" inside "contest", "log" inside "catalog".
+        private static bool ContainsWord(string text, string word)
+        {
+            return Regex.IsMatch(text, $@"\b{Regex.Escape(word)}\b");
+        }
+
+        private static bool ContainsAnyWord(string text, IEnumerable<string> words)
+        {
+            return words.Any(w => ContainsWord(text, w));
+        }
+
+        // Matches the word itself or a simple plural (password/passwords,
+        // log/logs) without opening up false positives elsewhere.
+        private static bool ContainsWordOrPlural(string text, string word)
+        {
+            return Regex.IsMatch(text, $@"\b{Regex.Escape(word)}(e?s)?\b");
         }
     }
 }

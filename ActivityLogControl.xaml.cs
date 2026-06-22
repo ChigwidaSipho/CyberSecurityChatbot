@@ -15,7 +15,7 @@ namespace CyberSecurityChatbot
         }
 
         public void SetLog(ActivityLog log)
-        {   
+        {     
             _log = log;
             Refresh();
         }

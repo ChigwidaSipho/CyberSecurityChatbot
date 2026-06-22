@@ -15,8 +15,8 @@ namespace CyberSecurityChatbot
         public string SentimentLabel { get; set; }
         public DateTime Timestamp { get; set; }
                                             
-        // ===== CONSTRUCTOR =====
-        public ChatbotModel()
+        // ===== CONSTRUCTOR =====   
+        public ChatbotModel()  
         {
             Timestamp = DateTime.Now;
         }

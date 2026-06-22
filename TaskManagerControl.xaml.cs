@@ -48,7 +48,7 @@ namespace CyberSecurityChatbot
                 TaskList.ItemsSource = null;
                 TaskList.ItemsSource = tasks;
             }  
-            catch (Exception ex)
+            catch (Exception ex)  
             {
                 ShowDbError($"⚠️ Could not load tasks: {ex.Message}");
             }

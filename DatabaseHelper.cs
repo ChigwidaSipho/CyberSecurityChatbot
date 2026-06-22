@@ -13,8 +13,8 @@ namespace CyberSecurityChatbot
         private const string ConnStr =
             "Server=localhost;Port=3306;Database=cybersecurity_chatbot;Uid=root;Pwd=SiphoChigwida@2007;";
 
-        // ===== INIT =====
-        public static void Initialise()
+        // ===== INIT =====  
+        public static void Initialise() 
         {
             const string sql = @"
                 CREATE TABLE IF NOT EXISTS tasks (

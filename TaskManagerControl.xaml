@@ -6,295 +6,188 @@
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="800">
 
-    <UserControl.Resources>
-        <SolidColorBrush x:Key="BgDeep"      Color="#0D0F1A"/>
-        <SolidColorBrush x:Key="BgPanel"     Color="#111827"/>
-        <SolidColorBrush x:Key="AccentCyan"  Color="#00FFFF"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#00FF88"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#E2E8F0"/>
-        <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
-        <SolidColorBrush x:Key="BorderCol"   Color="#1E3A5F"/>
+	<UserControl.Resources>
+		<SolidColorBrush x:Key="BgDeep"      Color="#0D0F1A"/>
+		<SolidColorBrush x:Key="BgPanel"     Color="#111827"/>
+		<SolidColorBrush x:Key="AccentCyan"  Color="#00FFFF"/>
+		<SolidColorBrush x:Key="AccentGreen" Color="#00FF88"/>
+		<SolidColorBrush x:Key="TextPrimary" Color="#E2E8F0"/>
+		<SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
+		<SolidColorBrush x:Key="BorderCol"   Color="#1E3A5F"/>
 
-        <Style x:Key="CyberLabel" TargetType="TextBlock">
-            <Setter Property="Foreground"  Value="#94A3B8"/>
-            <Setter Property="FontSize"    Value="11"/>
-            <Setter Property="FontFamily"  Value="Consolas"/>
-            <Setter Property="Margin"      Value="0,0,0,4"/>
-        </Style>
+		<Style x:Key="CyberLabel" TargetType="TextBlock">
+			<Setter Property="Foreground" Value="#94A3B8"/>
+			<Setter Property="FontSize" Value="11"/>
+			<Setter Property="FontFamily" Value="Consolas"/>
+			<Setter Property="Margin" Value="0,0,0,4"/>
+		</Style>
 
-        <Style x:Key="CyberInput" TargetType="TextBox">
-            <Setter Property="Background"      Value="#0D1526"/>
-            <Setter Property="Foreground"      Value="#E2E8F0"/>
-            <Setter Property="CaretBrush"      Value="White"/>
-            <Setter Property="BorderBrush"     Value="#1E3A5F"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding"         Value="8,6"/>
-            <Setter Property="FontFamily"      Value="Consolas"/>
-            <Setter Property="FontSize"        Value="12"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6">
-                            <ScrollViewer x:Name="PART_ContentHost"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#00FFFF"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+		<Style x:Key="CyberInput" TargetType="TextBox">
+			<Setter Property="Background" Value="#0D1526"/>
+			<Setter Property="Foreground" Value="#E2E8F0"/>
+			<Setter Property="CaretBrush" Value="White"/>
+			<Setter Property="BorderBrush" Value="#1E3A5F"/>
+			<Setter Property="BorderThickness" Value="1"/>
+			<Setter Property="Padding" Value="8,6"/>
+			<Setter Property="FontFamily" Value="Consolas"/>
+			<Setter Property="FontSize" Value="12"/>
+		</Style>
 
-        <Style x:Key="CyberBtn" TargetType="Button">
-            <Setter Property="Background"      Value="#003D66"/>
-            <Setter Property="Foreground"      Value="#00FFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontFamily"      Value="Consolas"/>
-            <Setter Property="FontSize"        Value="12"/>
-            <Setter Property="FontWeight"      Value="SemiBold"/>
-            <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="Padding"         Value="16,8"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#005580"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#007AA6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+		<Style x:Key="CyberBtn" TargetType="Button">
+			<Setter Property="Background" Value="#003D66"/>
+			<Setter Property="Foreground" Value="#00FFFF"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="FontFamily" Value="Consolas"/>
+			<Setter Property="Cursor" Value="Hand"/>
+			<Setter Property="Padding" Value="16,8"/>
+		</Style>
 
-        <Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource CyberBtn}">
-            <Setter Property="Background" Value="#4A0000"/>
-            <Setter Property="Foreground" Value="#FF6666"/>
-        </Style>
+		<Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource CyberBtn}">
+			<Setter Property="Background" Value="#4A0000"/>
+			<Setter Property="Foreground" Value="#FF6666"/>
+		</Style>
 
-        <Style x:Key="GreenBtn" TargetType="Button" BasedOn="{StaticResource CyberBtn}">
-            <Setter Property="Background" Value="#003D1F"/>
-            <Setter Property="Foreground" Value="#00FF88"/>
-        </Style>
-    </UserControl.Resources>
+		<Style x:Key="GreenBtn" TargetType="Button" BasedOn="{StaticResource CyberBtn}">
+			<Setter Property="Background" Value="#003D1F"/>
+			<Setter Property="Foreground" Value="#00FF88"/>
+		</Style>
+	</UserControl.Resources>
 
-    <Grid Background="{StaticResource BgDeep}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="320"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+	<Grid Background="{StaticResource BgDeep}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="320"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
 
-        <!-- ═══ LEFT: ADD TASK FORM ═══ -->
-        <Border Grid.Column="0" Background="{StaticResource BgPanel}"
+		<!-- LEFT PANEL -->
+		<Border Grid.Column="0" Background="{StaticResource BgPanel}"
                 BorderBrush="{StaticResource BorderCol}" BorderThickness="0,0,1,0"
                 Padding="20">
-            <StackPanel>
 
-                <TextBlock Text="📋  ADD TASK"
+			<StackPanel>
+
+				<TextBlock Text="📋 ADD TASK"
                            Foreground="{StaticResource AccentCyan}"
-                           FontSize="14" FontWeight="Bold"
-                           FontFamily="Consolas" Margin="0,0,0,20"/>
+                           FontSize="14"
+                           FontWeight="Bold"
+                           Margin="0,0,0,20"/>
 
-                <!-- Title -->
-                <TextBlock Style="{StaticResource CyberLabel}" Text="Task Title *"/>
-                <TextBox x:Name="TitleBox"
-                         Style="{StaticResource CyberInput}"
-                         Height="34" Margin="0,0,0,12"/>
+				<TextBlock Style="{StaticResource CyberLabel}" Text="Task Title *"/>
+				<TextBox x:Name="TitleBox" Style="{StaticResource CyberInput}" Margin="0,0,0,10"/>
 
-                <!-- Description -->
-                <TextBlock Style="{StaticResource CyberLabel}" Text="Description"/>
-                <TextBox x:Name="DescBox"
-                         Style="{StaticResource CyberInput}"
-                         Height="70" TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         VerticalContentAlignment="Top"
-                         Margin="0,0,0,12"/>
+				<TextBlock Style="{StaticResource CyberLabel}" Text="Description"/>
+				<TextBox x:Name="DescBox" Style="{StaticResource CyberInput}"
+                         Height="70" AcceptsReturn="True" Margin="0,0,0,10"/>
 
-                <!-- Reminder Date -->
-                <TextBlock Style="{StaticResource CyberLabel}" Text="Reminder Date (optional)"/>
-                <DatePicker x:Name="ReminderPicker"
-                            Background="#0D1526"
-                            Foreground="#E2E8F0"
-                            BorderBrush="#1E3A5F"
-                            FontFamily="Consolas"
-                            Margin="0,0,0,20"/>
+				<TextBlock Style="{StaticResource CyberLabel}" Text="Reminder Date"/>
+				<DatePicker x:Name="ReminderPicker" Margin="0,0,0,20"/>
 
-                <!-- Suggested tasks -->
-                <TextBlock Style="{StaticResource CyberLabel}"
-                           Text="💡 Suggested tasks:" Margin="0,0,0,8"/>
-
-                <WrapPanel Margin="0,0,0,20">
-                    <Button Style="{StaticResource CyberBtn}"
-                            Content="Enable 2FA"
-                            Margin="0,4,4,0" Padding="8,5"
-                            FontSize="11"
-                            Click="SuggestTask_Click" Tag="Enable two-factor authentication"/>
-                    <Button Style="{StaticResource CyberBtn}"
-                            Content="Update Passwords"
-                            Margin="0,4,4,0" Padding="8,5"
-                            FontSize="11"
-                            Click="SuggestTask_Click" Tag="Update all account passwords"/>
-                    <Button Style="{StaticResource CyberBtn}"
-                            Content="Review Privacy"
-                            Margin="0,4,4,0" Padding="8,5"
-                            FontSize="11"
-                            Click="SuggestTask_Click" Tag="Review account privacy settings"/>
-                    <Button Style="{StaticResource CyberBtn}"
-                            Content="Backup Data"
-                            Margin="0,4,4,0" Padding="8,5"
-                            FontSize="11"
-                            Click="SuggestTask_Click" Tag="Backup important data"/>
-                </WrapPanel>
-
-                <Button x:Name="AddTaskBtn"
+				<Button x:Name="AddTaskBtn"
                         Style="{StaticResource CyberBtn}"
-                        Content="➕  Add Task"
-                        Height="40"
+                        Content="➕ Add Task"
                         Click="AddTask_Click"/>
 
-                <!-- Status message -->
-                <TextBlock x:Name="StatusText"
+				<TextBlock x:Name="StatusText"
                            Foreground="{StaticResource AccentGreen}"
-                           FontFamily="Consolas"
-                           FontSize="11"
-                           TextWrapping="Wrap"
-                           Margin="0,12,0,0"
+                           Margin="0,10,0,0"
                            Visibility="Collapsed"/>
 
-                <!-- DB error message -->
-                <TextBlock x:Name="DbErrorText"
+				<TextBlock x:Name="DbErrorText"
                            Foreground="#FF6666"
-                           FontFamily="Consolas"
-                           FontSize="11"
-                           TextWrapping="Wrap"
-                           Margin="0,8,0,0"
+                           Margin="0,5,0,0"
                            Visibility="Collapsed"/>
-            </StackPanel>
-        </Border>
+			</StackPanel>
+		</Border>
 
-        <!-- ═══ RIGHT: TASK LIST ═══ -->
-        <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="52"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+		<!-- RIGHT PANEL -->
+		<Grid Grid.Column="1">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="50"/>
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
 
-            <!-- List header -->
-            <Border Grid.Row="0" Background="{StaticResource BgPanel}"
-                    BorderBrush="{StaticResource BorderCol}" BorderThickness="0,0,0,1"
-                    Padding="20,0">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               Text="📋  MY CYBERSECURITY TASKS"
+			<Border Background="{StaticResource BgPanel}"
+                    BorderBrush="{StaticResource BorderCol}"
+                    BorderThickness="0,0,0,1"
+                    Padding="15">
+
+				<DockPanel>
+					<TextBlock Text="📋 TASKS"
                                Foreground="{StaticResource AccentCyan}"
-                               FontSize="13" FontWeight="Bold"
-                               FontFamily="Consolas"
-                               VerticalAlignment="Center"/>
-                    <Button Grid.Column="1"
-                            Style="{StaticResource CyberBtn}"
-                            Content="🔄 Refresh"
-                            Padding="12,6"
-                            Click="Refresh_Click"/>
-                </Grid>
-            </Border>
+                               FontWeight="Bold"
+                               FontSize="13"
+                               DockPanel.Dock="Left"/>
 
-            <!-- Task list -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16">
-                <ItemsControl x:Name="TaskList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="#111827"
+					<Button Content="🔄 Refresh"
+                            Style="{StaticResource CyberBtn}"
+                            DockPanel.Dock="Right"
+                            Click="Refresh_Click"/>
+				</DockPanel>
+			</Border>
+
+			<ScrollViewer Grid.Row="1" Padding="10">
+				<ItemsControl x:Name="TaskList">
+
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<Border Background="#111827"
                                     BorderBrush="#1E3A5F"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Padding="16" Margin="0,0,0,10">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                    Padding="12"
+                                    Margin="0,0,0,10">
 
-                                    <!-- Title row -->
-                                    <StackPanel Grid.Row="0" Grid.Column="0"
-                                                Orientation="Horizontal">
-                                        <TextBlock Text="{Binding StatusDisplay}"
-                                                   Foreground="#00FF88"
-                                                   FontFamily="Consolas"
-                                                   FontSize="13"
-                                                   Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding Title}"
-                                                   Foreground="#E2E8F0"
-                                                   FontFamily="Consolas"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"/>
-                                    </StackPanel>
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="*"/>
+										<ColumnDefinition Width="Auto"/>
+									</Grid.ColumnDefinitions>
 
-                                    <!-- Description -->
-                                    <TextBlock Grid.Row="1" Grid.Column="0"
-                                               Text="{Binding Description}"
-                                               Foreground="#94A3B8"
-                                               FontFamily="Consolas"
-                                               FontSize="11"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0"/>
+									<StackPanel>
 
-                                    <!-- Reminder -->
-                                    <TextBlock Grid.Row="2" Grid.Column="0"
-                                               Foreground="#00FFFF"
-                                               FontFamily="Consolas"
-                                               FontSize="11"
-                                               Margin="0,6,0,0">
-                                        <Run Text="⏰ Reminder: "/>
-                                        <Run Text="{Binding ReminderDisplay}"/>
-                                    </TextBlock>
+										<TextBlock>
+											<TextBlock.Text>
+												<Binding Path="StatusDisplay" Mode="OneWay"/>
+											</TextBlock.Text>
+										</TextBlock>
 
-                                    <!-- Buttons -->
-                                    <StackPanel Grid.Row="0" Grid.RowSpan="3"
-                                                Grid.Column="1"
-                                                Orientation="Vertical"
-                                                VerticalAlignment="Center"
-                                                Margin="12,0,0,0">
-                                        <Button Style="{StaticResource GreenBtn}"
-                                                Content="✅ Done"
-                                                Padding="10,5"
-                                                FontSize="11"
-                                                Margin="0,0,0,6"
+										<TextBlock Text="{Binding Title, Mode=OneWay}"
+                                                   Foreground="White"
+                                                   FontWeight="Bold"/>
+
+										<TextBlock Text="{Binding Description, Mode=OneWay}"
+                                                   Foreground="#94A3B8"
+                                                   TextWrapping="Wrap"/>
+
+										<!-- FIXED: NO RUN BINDING -->
+										<TextBlock Foreground="#00FFFF">
+											<TextBlock.Text>
+												<Binding Path="ReminderDisplay" Mode="OneWay"/>
+											</TextBlock.Text>
+										</TextBlock>
+
+									</StackPanel>
+
+									<StackPanel Grid.Column="1" Margin="10,0,0,0">
+
+										<Button Content="✅ Done"
+                                                Style="{StaticResource GreenBtn}"
                                                 Tag="{Binding Id}"
-                                                Click="MarkDone_Click"/>
-                                        <Button Style="{StaticResource DangerBtn}"
-                                                Content="🗑 Delete"
-                                                Padding="10,5"
-                                                FontSize="11"
+                                                Click="MarkDone_Click"
+                                                Margin="0,0,0,5"/>
+
+										<Button Content="🗑 Delete"
+                                                Style="{StaticResource DangerBtn}"
                                                 Tag="{Binding Id}"
                                                 Click="DeleteTask_Click"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </Grid>
-    </Grid>
+									</StackPanel>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+
+				</ItemsControl>
+			</ScrollViewer>
+		</Grid>
+	</Grid>
 </UserControl>

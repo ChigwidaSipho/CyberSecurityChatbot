@@ -19,7 +19,7 @@ namespace CyberSecurityChatbot
         private List<QuizQuestion> _questions;
         private int  _current = 0;
         private int  _score   = 0;
-        private bool _answered = false;
+        private bool _answered = false;   
           
         // ===== BRUSHES =====
         private static readonly SolidColorBrush BrushCorrect   = new SolidColorBrush(Color.FromRgb(0x00, 0x3D, 0x1F));

@@ -10,7 +10,7 @@ namespace CyberSecurityChatbot
     /// </summary>
     public class ActivityLog
     {
-        // ===== STORAGE =====    
+        // ===== STORAGE =====       
         private readonly List<LogEntry> _entries = new List<LogEntry>();
 
         // ===== PUBLIC API =====

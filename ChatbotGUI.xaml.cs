@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,6 +22,8 @@ namespace CyberSecurityChatbot
         private static readonly SolidColorBrush BrushGreen = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x88));
 
         private Chatbot _bot;
+        private bool _hasShownWelcome = false;
+        private readonly Random _rand = new Random();
 
         public ChatbotGUI()
         {
@@ -35,6 +38,11 @@ namespace CyberSecurityChatbot
 
         private void ShowWelcome()
         {
+            // Guard against double-firing if SetBot/Loaded ever runs more than once
+            // (e.g. tab re-shown, control reused).
+            if (_hasShownWelcome) return;
+            _hasShownWelcome = true;
+
             PlayGreeting("ChatBotGreeting.wav");
 
             AppendBotMessage(
@@ -66,7 +74,12 @@ namespace CyberSecurityChatbot
             catch { }
         }
 
-        private void SendMessage()
+        // ================= SEND FLOW =================
+        // Fire-and-forget async void is intentional here: this is a UI event handler
+        // (button click / key press), which is the one place async void is the
+        // correct pattern in WPF. Exceptions inside are caught so a bad response
+        // can't silently crash the chat.
+        private async void SendMessage()
         {
             if (_bot == null) return;
 
@@ -75,10 +88,38 @@ namespace CyberSecurityChatbot
 
             AppendUserMessage(text);
             InputBox.Clear();
-            InputBox.Focus();
+            SetInputEnabled(false);
 
-            string response = _bot.GetResponse(text);
-            AppendBotMessage(response);
+            var typingBubble = AppendTypingIndicator();
+
+            try
+            {
+                // Small randomized delay so replies don't feel instant/robotic.
+                // Scales slightly with message length to mimic "reading" time.
+                int delayMs = 350 + _rand.Next(250, 650) + Math.Min(text.Length * 8, 600);
+                await Task.Delay(delayMs);
+
+                string response = _bot.GetResponse(text);
+
+                RemoveMessageRow(typingBubble);
+                AppendBotMessage(response);
+            }
+            catch (Exception)
+            {
+                RemoveMessageRow(typingBubble);
+                AppendBotMessage("Hmm, something glitched on my end. Try that again?");
+            }
+            finally
+            {
+                SetInputEnabled(true);
+                InputBox.Focus();
+            }
+        }
+
+        private void SetInputEnabled(bool enabled)
+        {
+            InputBox.IsEnabled = enabled;
+            SendButton.IsEnabled = enabled;
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e) => SendMessage();
@@ -90,20 +131,21 @@ namespace CyberSecurityChatbot
 
         private void Chip_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag != null)
+            if (sender is Button btn && btn.Tag != null && InputBox.IsEnabled)
             {
                 InputBox.Text = btn.Tag.ToString();
                 SendMessage();
             }
         }
 
+        // ================= MESSAGE RENDERING =================
         private void AppendBotMessage(string msg) =>
             AddMessageRow(msg, BrushBotBubble, BrushCyan, HorizontalAlignment.Left, true);
 
         private void AppendUserMessage(string msg) =>
             AddMessageRow(msg, BrushUserBubble, BrushGreen, HorizontalAlignment.Right, false);
 
-        private void AddMessageRow(string message, Brush background, Brush labelColor,
+        private Grid AddMessageRow(string message, Brush background, Brush labelColor,
                                    HorizontalAlignment align, bool isBot)
         {
             var row = new Grid { Margin = new Thickness(0, 4, 0, 4), Opacity = 0 };
@@ -115,15 +157,100 @@ namespace CyberSecurityChatbot
             row.Children.Add(bubble);
 
             MessagePanel.Children.Add(row);
+            ScrollToEnd();
 
+            row.BeginAnimation(OpacityProperty,
+                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
+
+            return row;
+        }
+
+        // ================= TYPING INDICATOR =================
+        // A lightweight "bot is typing..." bubble shown while the response is
+        // being "composed". Removed once the real reply lands.
+        private Grid AppendTypingIndicator()
+        {
+            var row = new Grid { Margin = new Thickness(0, 4, 0, 4), Opacity = 0 };
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+
+            var dots = new TextBlock
+            {
+                Text = "● ● ●",
+                Foreground = BrushCyan,
+                FontSize = 13,
+                FontFamily = new FontFamily("Consolas")
+            };
+
+            // Subtle pulse animation so the dots don't sit dead-still.
+            dots.BeginAnimation(OpacityProperty, new DoubleAnimation
+            {
+                From = 0.3,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(550),
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever
+            });
+
+            var stack = new StackPanel();
+            stack.Children.Add(new TextBlock
+            {
+                Text = "🛡 CyberBot",
+                Foreground = BrushCyan,
+                FontSize = 10,
+                FontFamily = new FontFamily("Consolas"),
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            stack.Children.Add(dots);
+
+            var bubble = new Border
+            {
+                Background = BrushBotBubble,
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(12),
+                Margin = new Thickness(5),
+                MaxWidth = 520,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Child = stack,
+                Effect = new DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 10,
+                    Opacity = 0.25,
+                    ShadowDepth = 1
+                }
+            };
+
+            Grid.SetColumn(bubble, 0);
+            row.Children.Add(bubble);
+
+            MessagePanel.Children.Add(row);
+            ScrollToEnd();
+
+            row.BeginAnimation(OpacityProperty,
+                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
+
+            return row;
+        }
+
+        private void RemoveMessageRow(Grid row)
+        {
+            if (row == null || !MessagePanel.Children.Contains(row)) return;
+
+            // Fade out, then remove — avoids an abrupt pop when the typing
+            // bubble is swapped for the real message.
+            var fadeOut = new DoubleAnimation(row.Opacity, 0, TimeSpan.FromMilliseconds(120));
+            fadeOut.Completed += (s, e) => MessagePanel.Children.Remove(row);
+            row.BeginAnimation(OpacityProperty, fadeOut);
+        }
+
+        private void ScrollToEnd()
+        {
             Dispatcher.InvokeAsync(() =>
             {
                 ChatScroll.UpdateLayout();
                 ChatScroll.ScrollToEnd();
             });
-
-            row.BeginAnimation(OpacityProperty,
-                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
         }
 
         private Border BuildBubble(string message, Brush background, Brush labelColor,
