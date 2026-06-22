@@ -4,20 +4,18 @@ using System.Windows.Controls;
 
 namespace CyberSecurityChatbot
 {
-    /// <summary>
-    /// Task Assistant tab — add, view, complete, and delete cybersecurity tasks.
-    /// Stores everything in MySQL via DatabaseHelper.
-    /// </summary>
-    public partial class TaskManagerControl : UserControl  
+    public partial class TaskManagerControl : UserControl
     {
         private Chatbot _bot;
+
+        private int _editingId = -1;
+        private bool IsEditing => _editingId != -1;
 
         public TaskManagerControl()
         {
             InitializeComponent();
         }
 
-        /// <summary>Called by MainWindow to inject the shared bot (for activity logging).</summary>
         public void SetBot(Chatbot bot)
         {
             _bot = bot;
@@ -25,7 +23,8 @@ namespace CyberSecurityChatbot
             LoadTasks();
         }
 
-        // ===== DB INIT =====
+        public void Refresh() => LoadTasks();
+
         private void InitialiseDb()
         {
             try
@@ -39,7 +38,6 @@ namespace CyberSecurityChatbot
             }
         }
 
-        // ===== LOAD TASKS =====
         private void LoadTasks()
         {
             try
@@ -47,15 +45,22 @@ namespace CyberSecurityChatbot
                 var tasks = DatabaseHelper.GetAllTasks();
                 TaskList.ItemsSource = null;
                 TaskList.ItemsSource = tasks;
-            }  
-            catch (Exception ex)  
+            }
+            catch (Exception ex)
             {
                 ShowDbError($"⚠️ Could not load tasks: {ex.Message}");
             }
         }
 
-        // ===== ADD TASK =====
         private void AddTask_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsEditing)
+                SaveEdit();
+            else
+                AddNewTask();
+        }
+
+        private void AddNewTask()
         {
             string title = TitleBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(title))
@@ -66,9 +71,9 @@ namespace CyberSecurityChatbot
 
             var task = new CyberTask
             {
-                Title       = title,
+                Title = title,
                 Description = DescBox.Text.Trim(),
-                Reminder    = ReminderPicker.SelectedDate
+                Reminder = ReminderPicker.SelectedDate
             };
 
             try
@@ -81,12 +86,7 @@ namespace CyberSecurityChatbot
                     : "";
 
                 ShowStatus($"✅ Task '{title}' added.{reminderMsg}");
-
-                // Clear form
-                TitleBox.Text = "";
-                DescBox.Text  = "";
-                ReminderPicker.SelectedDate = null;
-
+                ClearForm();
                 LoadTasks();
             }
             catch (Exception ex)
@@ -95,14 +95,79 @@ namespace CyberSecurityChatbot
             }
         }
 
-        // ===== SUGGEST TASK =====
+        private void EditTask_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int id)
+            {
+                var tasks = TaskList.ItemsSource as System.Collections.Generic.List<CyberTask>;
+                var task = tasks?.Find(t => t.Id == id);
+                if (task == null) return;
+
+                TitleBox.Text = task.Title;
+                DescBox.Text = task.Description;
+                ReminderPicker.SelectedDate = task.Reminder;
+
+                _editingId = id;
+                FormTitle.Text = "✏ EDIT TASK";
+                AddTaskBtn.Content = "💾 Save Changes";
+                CancelEditBtn.Visibility = Visibility.Visible;
+
+                ShowStatus($"Editing: '{task.Title}' — make changes and click Save.", isError: false);
+            }
+        }
+
+        private void SaveEdit()
+        {
+            string title = TitleBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                ShowStatus("⚠️ Please enter a task title.", isError: true);
+                return;
+            }
+
+            var updated = new CyberTask
+            {
+                Id = _editingId,
+                Title = title,
+                Description = DescBox.Text.Trim(),
+                Reminder = ReminderPicker.SelectedDate
+            };
+
+            try
+            {
+                DatabaseHelper.UpdateTask(updated);
+                _bot?.Log.Add("Task updated", title);
+                ShowStatus($"✅ Task '{title}' updated successfully.");
+                ExitEditMode();
+                LoadTasks();
+            }
+            catch (Exception ex)
+            {
+                ShowDbError($"⚠️ Could not update task: {ex.Message}");
+            }
+        }
+
+        private void CancelEdit_Click(object sender, RoutedEventArgs e)
+        {
+            ExitEditMode();
+            ShowStatus("Edit cancelled.");
+        }
+
+        private void ExitEditMode()
+        {
+            _editingId = -1;
+            FormTitle.Text = "📋 ADD TASK";
+            AddTaskBtn.Content = "➕ Add Task";
+            CancelEditBtn.Visibility = Visibility.Collapsed;
+            ClearForm();
+        }
+
         private void SuggestTask_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag != null)
                 TitleBox.Text = btn.Tag.ToString();
         }
 
-        // ===== MARK DONE =====
         private void MarkDone_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)
@@ -120,11 +185,12 @@ namespace CyberSecurityChatbot
             }
         }
 
-        // ===== DELETE =====
         private void DeleteTask_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)
             {
+                if (_editingId == id) ExitEditMode();
+
                 try
                 {
                     DatabaseHelper.DeleteTask(id);
@@ -138,13 +204,18 @@ namespace CyberSecurityChatbot
             }
         }
 
-        // ===== REFRESH =====
         private void Refresh_Click(object sender, RoutedEventArgs e) => LoadTasks();
 
-        // ===== HELPERS =====
+        private void ClearForm()
+        {
+            TitleBox.Text = "";
+            DescBox.Text = "";
+            ReminderPicker.SelectedDate = null;
+        }
+
         private void ShowStatus(string msg, bool isError = false)
         {
-            StatusText.Text       = msg;
+            StatusText.Text = msg;
             StatusText.Foreground = isError
                 ? System.Windows.Media.Brushes.OrangeRed
                 : System.Windows.Media.Brushes.LimeGreen;
@@ -153,7 +224,7 @@ namespace CyberSecurityChatbot
 
         private void ShowDbError(string msg)
         {
-            DbErrorText.Text       = msg;
+            DbErrorText.Text = msg;
             DbErrorText.Visibility = Visibility.Visible;
         }
     }

@@ -9,12 +9,12 @@ namespace CyberSecurityChatbot
     /// </summary>
     public static class DatabaseHelper
     {
-        // 🔧 UPDATE ONLY THIS LINE (password + DB name if needed)
+        
         private const string ConnStr =
             "Server=localhost;Port=3306;Database=cybersecurity_chatbot;Uid=root;Pwd=SiphoChigwida@2007;";
 
         // ===== INIT =====  
-        public static void Initialise() 
+        public static void Initialise()
         {
             const string sql = @"
                 CREATE TABLE IF NOT EXISTS tasks (
@@ -92,6 +92,28 @@ namespace CyberSecurityChatbot
             }
         }
 
+        // ===== UPDATE TASK DETAILS =====
+        public static void UpdateTask(CyberTask task)
+        {
+            const string sql = @"
+                UPDATE tasks
+                SET title       = @title,
+                    description = @desc,
+                    reminder    = @reminder
+                WHERE id = @id";
+
+            using (var conn = Open())
+            using (var cmd = new MySqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@title", task.Title);
+                cmd.Parameters.AddWithValue("@desc", task.Description ?? "");
+                cmd.Parameters.AddWithValue("@reminder",
+                    task.Reminder.HasValue ? (object)task.Reminder.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@id", task.Id);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         // ===== DELETE =====
         public static void DeleteTask(int id)
         {
@@ -137,6 +159,6 @@ namespace CyberSecurityChatbot
             Reminder.HasValue ? Reminder.Value.ToString("dd MMM yyyy") : "None";
 
         public string StatusDisplay =>
-            IsComplete ? "✅ Done" : "⏳ Pending";
+            IsComplete ? " Done" : " Pending";
     }
 }
